@@ -1,0 +1,51 @@
+---
+title: "GSheets_to_Kumu"
+author: "Daniel P. Hall Riggins, MD"
+date: "9/8/2021"
+output: html_document
+---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+sheet <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1TBkgGqwUj7ZoRCQHA_oFJMORT6EV6-viMzdmW8aO4Po/edit?usp=sharing")
+```
+```{r}
+people <- sheet %>%
+    select(
+        label = Name, 
+        Email, 
+        Title, 
+        LinkedIn
+    ) %>%
+    mutate(
+        type = "Person"
+    )
+
+orgs <- sheet %>%
+    select(
+        label = "Primary Organization"
+    ) %>%
+    distinct() %>%
+    mutate(
+        type = "Organization"
+    )
+
+elements <- add_row(people, orgs)
+
+connections <- sheet %>%
+    select(
+        from = Name,
+        to = "Primary Organization"
+    ) %>%
+    mutate(
+        direction = "directed",
+        type = "Primary Organization"
+    )
+
+forKumu <- list(elements = elements, connections = connections)
+
+jsonlite::write_json(forKumu, "kumu.json")
+```
+
