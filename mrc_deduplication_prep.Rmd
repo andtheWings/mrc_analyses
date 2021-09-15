@@ -41,22 +41,7 @@ history_people <- history_raw %>%
         origin = "encounter_history.xlsx"
     )
 
-encounters_people_multiple_bdays <- encounters_people %>%
-    group_by(BIRTH_DT_TM) %>%
-    summarise(records = n()) %>%
-    filter(records >1)
-
-encounters_people_possible_dupes <- encounters_people %>%
-    filter(BIRTH_DT_TM %in% encounters_people_multiple_bdays$BIRTH_DT_TM) %>%
-
-write_feather(encounters_people_possible_dupes, "data/encounters_people_possible_dupes.feather")
-
-encounters_people_deduped <- read_csv("data/encounters_people/encounters_people_deduped.csv")
-
-encounters_people_deduped <- encounters_people_deduped %>%
-    filter(confidence < 1)
-
-encounters_encounters <- encounters_raw %>%
+history_encounters <- history_raw %>%
     # 145490 observations
     #distinct() %>%
     # No change
@@ -68,8 +53,6 @@ encounters_encounters <- encounters_raw %>%
     mutate(
         origin = "encounter_history.xlsx"
     )
-
-write_feather(encounters_encounters, "data/encounters_encounters.feather")
 
 FHP_people <- FHP_raw %>%
     # 86576 rows
@@ -84,7 +67,6 @@ FHP_people <- FHP_raw %>%
         origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
     )
 
-write_feather(FHP_people, "data/FHP_people.feather")
 
 FHP_encounters <- FHP_raw %>%
     # 86576 rows
@@ -98,8 +80,6 @@ FHP_encounters <- FHP_raw %>%
     mutate(
         origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
     )
-
-write_feather(FHP_encounters, "data/FHP_encounters.feather")
 ```
 
 
