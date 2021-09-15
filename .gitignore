@@ -43,3 +43,7 @@ vignettes/*.pdf
 data/
 
 *.Rproj
+
+.ipynb_checkpoints/
+
+mrc_data/
