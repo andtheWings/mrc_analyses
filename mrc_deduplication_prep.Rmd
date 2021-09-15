@@ -1,0 +1,109 @@
+---
+title: "1 Prepping Datasets for Deduplication and Merging"
+author: "Daniel P. Hall Riggins, MD"
+date: "9/11/2021"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(RMariaDB)
+library(tidyverse)
+```
+
+"MatchingtoMEdata" and "Rectified_FHSP_CC_20201102" do not need any prep
+
+```{r message=FALSE, warning=FALSE}
+history_raw <- read_xlsx("mrc_data/encounter history.xlsx")
+FHP_raw <- read_xlsx("mrc_data/FHPMatchedtoEMRMatchedtoChante_reduced.xlsx", na = "NULL")
+```
+
+```{r}
+con <- dbConnect(MariaDB(),
+                 dbname = 'mrc_data',
+                 host = '127.0.0.1',
+                 port = 3306,
+                 user = 'root')
+```
+
+
+```{r}
+history_people <- history_raw %>%
+    # 145490 observations
+    #distinct() %>%
+    # No change
+    select(
+        person_id, cmrn_id, rin_cc, BIRTH_DT_TM, sex_cd, race, ethnicity
+    ) %>%
+    distinct() %>%
+    # 4766 observations
+    mutate(
+        origin = "encounter_history.xlsx"
+    )
+
+encounters_people_multiple_bdays <- encounters_people %>%
+    group_by(BIRTH_DT_TM) %>%
+    summarise(records = n()) %>%
+    filter(records >1)
+
+encounters_people_possible_dupes <- encounters_people %>%
+    filter(BIRTH_DT_TM %in% encounters_people_multiple_bdays$BIRTH_DT_TM) %>%
+
+write_feather(encounters_people_possible_dupes, "data/encounters_people_possible_dupes.feather")
+
+encounters_people_deduped <- read_csv("data/encounters_people/encounters_people_deduped.csv")
+
+encounters_people_deduped <- encounters_people_deduped %>%
+    filter(confidence < 1)
+
+encounters_encounters <- encounters_raw %>%
+    # 145490 observations
+    #distinct() %>%
+    # No change
+    select(
+        !c(BIRTH_DT_TM, sex_cd, race, ethnicity)
+    ) %>%
+    #distinct() %>%
+    # No change
+    mutate(
+        origin = "encounter_history.xlsx"
+    )
+
+write_feather(encounters_encounters, "data/encounters_encounters.feather")
+
+FHP_people <- FHP_raw %>%
+    # 86576 rows
+    distinct() %>%
+    # 44346 rows
+    select(
+        person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity
+    ) %>%
+    distinct() %>%
+    # 4768 rows
+    mutate(
+        origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
+    )
+
+write_feather(FHP_people, "data/FHP_people.feather")
+
+FHP_encounters <- FHP_raw %>%
+    # 86576 rows
+    distinct() %>%
+    # 44346 rows
+    select(
+        !c(NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity)
+    ) %>%
+    #distinct() %>%
+    # no change
+    mutate(
+        origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
+    )
+
+write_feather(FHP_encounters, "data/FHP_encounters.feather")
+```
+
+
+
+
+
+
