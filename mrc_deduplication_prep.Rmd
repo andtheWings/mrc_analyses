@@ -14,18 +14,11 @@ library(tidyverse)
 "MatchingtoMEdata" and "Rectified_FHSP_CC_20201102" do not need any prep
 
 ```{r message=FALSE, warning=FALSE}
-history_raw <- read_xlsx("mrc_data/encounter history.xlsx")
+history_raw <- read_xlsx("mrc_data/encounter history.xlsx", na = "NULL")
 FHP_raw <- read_xlsx("mrc_data/FHPMatchedtoEMRMatchedtoChante_reduced.xlsx", na = "NULL")
+deaths_raw <- read_xlsx("mrc_data/MatchingtoMEdata.xlsx", na = "NULL")
+diagnoses_raw <- read_xlsx("mrc_data/Rectified_FHSP_CC_20201102.xlsx", col_types = c("numeric", "text"))
 ```
-
-```{r}
-con <- dbConnect(MariaDB(),
-                 dbname = 'mrc_data',
-                 host = '127.0.0.1',
-                 port = 3306,
-                 user = 'root')
-```
-
 
 ```{r}
 history_people <- history_raw %>%
@@ -41,19 +34,6 @@ history_people <- history_raw %>%
         origin = "encounter_history.xlsx"
     )
 
-history_encounters <- history_raw %>%
-    # 145490 observations
-    #distinct() %>%
-    # No change
-    select(
-        !c(BIRTH_DT_TM, sex_cd, race, ethnicity)
-    ) %>%
-    #distinct() %>%
-    # No change
-    mutate(
-        origin = "encounter_history.xlsx"
-    )
-
 FHP_people <- FHP_raw %>%
     # 86576 rows
     distinct() %>%
@@ -65,6 +45,38 @@ FHP_people <- FHP_raw %>%
     # 4768 rows
     mutate(
         origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
+    )
+
+people <- history_people %>%
+    full_join(
+        FHP_people,
+        by = c("person_id", "cmrn_id", "rin_cc", "sex_cd", "BIRTH_DT_TM", "race", "ethnicity")
+    ) %>%
+    full_join(
+    deaths_raw, 
+    by = c(
+        "person_id" = "Person_ID",
+        "rin_cc" = "RIN_CC",
+        "NAME_FIRST" = "DECEDENT_FIRST_NAME",
+        "NAME_LAST" = "DECEDENT_LAST_NAME",
+        "BIRTH_DT_TM" = "DECEDENT_DOB"
+        )
+    )
+```
+
+
+```{r}
+history_encounters <- history_raw %>%
+    # 145490 observations
+    #distinct() %>%
+    # No change
+    select(
+        !c(BIRTH_DT_TM, sex_cd, race, ethnicity)
+    ) %>%
+    #distinct() %>%
+    # No change
+    mutate(
+        origin = "encounter_history.xlsx"
     )
 
 
@@ -84,6 +96,12 @@ FHP_encounters <- FHP_raw %>%
 
 
 
-
+```{r}
+con <- dbConnect(MariaDB(),
+                 dbname = 'mrc_data',
+                 host = '127.0.0.1',
+                 port = 3306,
+                 user = 'root')
+```
 
 
