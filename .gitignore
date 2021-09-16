@@ -47,3 +47,5 @@ data/
 .ipynb_checkpoints/
 
 mrc_data/
+
+*.ipynb
