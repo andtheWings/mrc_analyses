@@ -11,6 +11,8 @@ conda create mrc_analyses
 conda activate mrc_analyses
 
 conda install -c conda-forge jupyterlab
+conda install -c conda-forge pymysql 
+conda install -c conda-forge sqlalchemy
 
 python -m pip install panda-dedupe
 ```
