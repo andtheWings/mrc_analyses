@@ -6,6 +6,7 @@ output: html_document
 ---
 
 ```{r message=FALSE, warning=FALSE}
+library(arrow)
 library(readxl)
 library(RMariaDB)
 library(tidyverse)
@@ -82,6 +83,13 @@ con <- dbConnect(MariaDB(),
                  user = 'root')
 
 dbWriteTable(con, "people", people, overwrite = TRUE)
+```
+```{r}
+deduped <- read_parquet("mrc_data/people_model/deduped_people", na = "NULL")
+deduped$person_id <- as.numeric(deduped$person_id)
+deduped$person_id <- as.numeric(deduped$person_id)
+
+full_join(people, deduped)
 ```
 
 
