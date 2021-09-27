@@ -8,72 +8,69 @@ output: html_document
 ```{r message=FALSE, warning=FALSE}
 library(arrow)
 library(readxl)
-library(RMariaDB)
 library(tidyverse)
+
 ```
 
 "MatchingtoMEdata" and "Rectified_FHSP_CC_20201102" do not need any prep
 
 ```{r message=FALSE, warning=FALSE}
-history_raw <- read_xlsx("mrc_data/encounter history.xlsx", na = "NULL")
-FHP_raw <- read_xlsx("mrc_data/FHPMatchedtoEMRMatchedtoChante_reduced.xlsx", na = "NULL")
-deaths_raw <- read_xlsx("mrc_data/MatchingtoMEdata.xlsx", na = "NULL")
+FHP_raw <- read_xlsx(
+    "mrc_data/FHPMatchedtoEMRMatchedtoChante_reduced.xlsx",
+    sheet = "EncounterdatawithChante",
+    na = "NULL"
+)
+deaths_raw <- read_xlsx(
+    "mrc_data/MatchingtoMEdata.xlsx", 
+    na = "NULL"
+)
 diagnoses_raw <- read_xlsx("mrc_data/Rectified_FHSP_CC_20201102.xlsx", col_types = c("numeric", "text"))
 ```
 
-```{r people prep}
-history_people <- history_raw %>%
-    # 145490 observations
-    #distinct() %>%
-    # No change
-    select(
-        person_id, cmrn_id, rin_cc, BIRTH_DT_TM, sex_cd, race, ethnicity
-    ) %>%
-    distinct() %>%
-    # 4766 observations
-    mutate(
-        origin = "encounter_history.xlsx"
-    )
-
-FHP_people <- FHP_raw %>%
-    # 86576 rows
-    distinct() %>%
-    # 44346 rows
-    select(
-        person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity
-    ) %>%
-    distinct() %>%
-    # 4768 rows
-    mutate(
-        origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
-    )
-
-people <- history_people %>%
-    full_join(
-        FHP_people,
-        by = c("person_id", "cmrn_id", "rin_cc", "sex_cd", "BIRTH_DT_TM", "race", "ethnicity")
-    ) %>%
-    full_join(
-        deaths_raw, 
-        by = c(
-            "person_id" = "Person_ID",
-            "rin_cc" = "RIN_CC",
-            "NAME_FIRST" = "DECEDENT_FIRST_NAME",
-            "NAME_LAST" = "DECEDENT_LAST_NAME",
-            "BIRTH_DT_TM" = "DECEDENT_DOB"
+```{r functions}
+dedupe_prep <- function(source, columns, origin) {
+    print(
+        paste0(
+            "Initial number of records is ",
+            nrow(source)
         )
     )
-
-pos_dups <- people %>%
-    group_by(BIRTH_DT_TM) %>%
-    summarise(count = n()) %>%
-    filter(count > 1)
-
-people <- people %>%
-    mutate(
-        possible_dupe = BIRTH_DT_TM %in% pos_dups$BIRTH_DT_TM
+    distinct1 <- distinct(source)
+    print(
+        paste0(
+            "Which reduces to ",
+            nrow(distinct1),
+            " when disinct() is first run"
+        )
     )
+    select2 <- select({{distinct1}}, {{columns}})
+    distinct3 <- distinct(select2)
+    print(
+        paste0(
+            "Which reduces to ",
+            nrow(distinct3),
+            " when disinct() is run after selecting columns of interest"
+        )
+    )
+    mutate4 <- mutate(
+        distinct3,
+        origin = origin
+    )
+    return(mutate4)
+}
 ```
+
+
+```{r FHP people prep}
+FHP_people <- dedupe_prep(
+    source = FHP_raw,
+    columns = c(person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity),
+    origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
+)
+
+```
+
+
 
 ```{r init people in dolt}
 con <- dbConnect(MariaDB(),
@@ -85,11 +82,16 @@ con <- dbConnect(MariaDB(),
 dbWriteTable(con, "people", people, overwrite = TRUE)
 ```
 ```{r}
-deduped <- read_parquet("mrc_data/people_model/deduped_people", na = "NULL")
-deduped$person_id <- as.numeric(deduped$person_id)
-deduped$person_id <- as.numeric(deduped$person_id)
+read_parquet("mrc_data/people_model/deduped_people.parquet") %>%
+    select(1:3, 17:18) %>%
+    mutate(across(1:3, as.numeric)) %>%
+    full_join(people) %>%
+    write_csv("people.csv")
 
-full_join(people, deduped)
+
+
+
+
 ```
 
 
