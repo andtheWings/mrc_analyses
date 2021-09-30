@@ -65,6 +65,14 @@ dedupe_prep <- function(source, columns, origin) {
     )
     return(distinct3)
 }
+
+make_duplicate_ref <- function(source, variable) {
+    reference <- source %>%
+    group_by({{variable}}) %>%
+    summarize(n = n()) %>%
+    filter(n > 1) %>%
+    filter(!is.na({{variable}}))
+}
 ```
 
 
@@ -170,6 +178,33 @@ people <- FHP_people %>%
             "dob.fhp" = "dob.deaths"
         ),
         suffix = c("", "")
+    ) %>%
+    full_join(
+        alerts_people,
+        by = c(
+            "name.fhp" = "name.alerts",
+            "cmrn_id.fhp" = "cmrn_id.alerts" 
+        )
+    ) %>%
+    full_join(
+        casework_people,
+        by = c("name.fhp" = "name.casework")
+    )
+
+dup_name_ref <- make_duplicate_ref(people, name.fhp)
+dup_cmrn_ref <- make_duplicate_ref(people, cmrn_id.fhp)
+dup_rin_ref <- make_duplicate_ref(people, rin_cc.fhp)
+dup_personid_ref <- make_duplicate_ref(people, person_id.fhp)
+dup_dob_ref <- make_duplicate_ref(people, dob.fhp)
+
+
+all_possible_dups <- people %>%
+    filter(
+        (name.fhp %in% dup_name_ref$name.fhp) | 
+        (cmrn_id.fhp %in% dup_cmrn_ref$cmrn_id.fhp) |
+        (rin_cc.fhp %in% dup_rin_ref$rin_cc.fhp) |
+        (person_id.fhp %in% dup_personid_ref$person_id.fhp) |
+        (dob.fhp %in% dup_dob_ref$dob.fhp)
     )
 ```
 
