@@ -63,11 +63,7 @@ dedupe_prep <- function(source, columns, origin) {
             " when disinct() is run after selecting columns of interest"
         )
     )
-    mutate4 <- mutate(
-        distinct3,
-        origin = origin
-    )
-    return(mutate4)
+    return(distinct3)
 }
 ```
 
@@ -75,8 +71,7 @@ dedupe_prep <- function(source, columns, origin) {
 ```{r FHP people prep}
 FHP_people <- dedupe_prep(
     source = FHP_raw,
-    columns = c(person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity),
-    origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
+    columns = c(person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity)
     ) %>%
     mutate(
         first_name = str_to_title(NAME_FIRST),
@@ -90,13 +85,15 @@ FHP_people <- dedupe_prep(
     ) %>%
     select(
         -c(NAME_FIRST, NAME_LAST, first_name, last_name)
+    ) %>%
+    rename_with(
+        ~ paste0(.x, ".fhp")
     )
 ```
 ```{r}
 deaths_people <- dedupe_prep(
     source = deaths_raw,
-    columns = everything(),
-    origin = "MatchingtoMEdata.xlsx"
+    columns = everything()
     ) %>%
      mutate(
         first_name = str_to_title(DECEDENT_FIRST_NAME),
@@ -112,14 +109,19 @@ deaths_people <- dedupe_prep(
     ) %>%
     select(
         -c(DECEDENT_FIRST_NAME, DECEDENT_LAST_NAME, first_name, last_name)
+    ) %>%
+    rename_with(
+        ~ paste0(.x, ".deaths")
     )
 ```
 ```{r}
 claims_people <- dedupe_prep(
     source = claims_raw,
-    columns = rin_cc,
-    origin = "Rectified_FHSP_CC_20201102.xlsx"
-)
+    columns = rin_cc
+) %>%
+    rename_with(
+        ~ paste0(.x, ".claims")
+    )
 ```
 
 ```{r}
@@ -147,6 +149,9 @@ alerts_people <- alerts_people_intermediate %>%
     ) %>%
     rename(
         cmrn_id = cmrn
+    ) %>%
+    rename_with(
+        ~ paste0(.x, ".alerts")
     )
 ```
 
@@ -159,9 +164,23 @@ casework_people <- dedupe_prep(
 ) %>%
     rename(
         name = "Client Name"
+    ) %>%
+    rename_with(
+        ~ paste0(.x, ".casework")
     )
 ```
 
+```{r}
+people <- FHP_people %>%
+    full_join(
+        deaths_people,
+        by = c(
+            "name.fhp" = "name.deaths", 
+            "dob.fhp" = "dob.deaths"
+        ),
+        suffix = c("", "")
+    ) 
+```
 
 
 
