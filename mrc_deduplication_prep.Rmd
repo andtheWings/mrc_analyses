@@ -1,5 +1,5 @@
 ---
-title: "1 Prepping Datasets for Deduplication and Merging"
+title: "1 Prepping Datasets for Deduplication"
 author: "Daniel P. Hall Riggins, MD"
 date: "9/11/2021"
 output: html_document
@@ -9,10 +9,7 @@ output: html_document
 library(arrow)
 library(readxl)
 library(tidyverse)
-
 ```
-
-"MatchingtoMEdata" and "Rectified_FHSP_CC_20201102" do not need any prep
 
 ```{r message=FALSE, warning=FALSE}
 FHP_raw <- read_xlsx(
@@ -20,11 +17,25 @@ FHP_raw <- read_xlsx(
     sheet = "EncounterdatawithChante",
     na = "NULL"
 )
+
 deaths_raw <- read_xlsx(
     "mrc_data/MatchingtoMEdata.xlsx", 
     na = "NULL"
 )
-diagnoses_raw <- read_xlsx("mrc_data/Rectified_FHSP_CC_20201102.xlsx", col_types = c("numeric", "text"))
+
+claims_raw <- read_xlsx(
+    "mrc_data/Rectified_FHSP_CC_20201102.xlsx",
+    col_types = c("numeric", "text")
+)
+
+alerts_raw <- read_xlsx(
+    "mrc_data/20201023AlertList.xlsx"
+)
+
+casework_raw <- read_xlsx(
+    "mrc_data/Unencrypted_CCHreport.xlsx",
+    na = "NA"
+)
 ```
 
 ```{r functions}
@@ -67,33 +78,38 @@ FHP_people <- dedupe_prep(
     columns = c(person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity),
     origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
 )
-
-```
-
-
-
-```{r init people in dolt}
-con <- dbConnect(MariaDB(),
-                 dbname = 'mrc_data',
-                 host = '127.0.0.1',
-                 port = 3306,
-                 user = 'root')
-
-dbWriteTable(con, "people", people, overwrite = TRUE)
 ```
 ```{r}
-read_parquet("mrc_data/people_model/deduped_people.parquet") %>%
-    select(1:3, 17:18) %>%
-    mutate(across(1:3, as.numeric)) %>%
-    full_join(people) %>%
-    write_csv("people.csv")
-
-
-
-
-
+deaths_people <- dedupe_prep(
+    source = deaths_raw,
+    columns = everything(),
+    origin = "MatchingtoMEdata.xlsx"
+)
+```
+```{r}
+claims_people <- dedupe_prep(
+    source = claims_raw,
+    columns = rin_cc,
+    origin = "Rectified_FHSP_CC_20201102.xlsx"
+)
 ```
 
+```{r}
+alerts_people <- dedupe_prep(
+    source = alerts_raw,
+    columns = c(name, mrn, cmrn),
+    origin = "20201023AlertList.xlsx"
+) %>% filter(
+    !(is.na(name)) 
+)
+```
+```{r}
+casework_people <- dedupe_prep(
+    source = casework_raw,
+    columns = c("Client ID", "Legacy ID", "Client Name"),
+    origin = "Unencrypted_CCHreport.xlsx"
+)
+```
 
 ```{r}
 
