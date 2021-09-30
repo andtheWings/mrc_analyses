@@ -77,14 +77,42 @@ FHP_people <- dedupe_prep(
     source = FHP_raw,
     columns = c(person_id, cmrn_id, rin_cc, NAME_FIRST, NAME_LAST, BIRTH_DT_TM, sex_cd, race, ethnicity),
     origin = "FHPMatchedtoEMRMatchedtoChante_reduced.xlsx"
-)
+    ) %>%
+    mutate(
+        first_name = str_to_title(NAME_FIRST),
+        last_name = str_to_title(NAME_LAST)
+    ) %>%
+    mutate(
+        name = paste0(first_name, " ", last_name)
+    ) %>%
+    rename(
+        dob = BIRTH_DT_TM
+    ) %>%
+    select(
+        -c(NAME_FIRST, NAME_LAST, first_name, last_name)
+    )
 ```
 ```{r}
 deaths_people <- dedupe_prep(
     source = deaths_raw,
     columns = everything(),
     origin = "MatchingtoMEdata.xlsx"
-)
+    ) %>%
+     mutate(
+        first_name = str_to_title(DECEDENT_FIRST_NAME),
+        last_name = str_to_title(DECEDENT_LAST_NAME)
+    ) %>%
+    mutate(
+        name = paste0(first_name, " ", last_name)
+    ) %>% 
+    rename(
+        dob = DECEDENT_DOB,
+        person_id = Person_ID,
+        rin_cc = RIN_CC
+    ) %>%
+    select(
+        -c(DECEDENT_FIRST_NAME, DECEDENT_LAST_NAME, first_name, last_name)
+    )
 ```
 ```{r}
 claims_people <- dedupe_prep(
@@ -95,21 +123,49 @@ claims_people <- dedupe_prep(
 ```
 
 ```{r}
-alerts_people <- dedupe_prep(
+alerts_people_intermediate <- dedupe_prep(
     source = alerts_raw,
     columns = c(name, mrn, cmrn),
     origin = "20201023AlertList.xlsx"
-) %>% filter(
-    !(is.na(name)) 
+    ) %>% 
+    filter(
+        !(is.na(name)) 
+    ) %>% 
+    mutate(
+        name = str_to_title(name)
+    ) 
+
+alerts_split_name <- str_split_fixed(
+    string = alerts_people_intermediate$name, 
+    pattern = ", ",
+    n = 2
 )
+
+alerts_people <- alerts_people_intermediate %>%
+    mutate(
+        name = paste0(alerts_split_name[,2], " ", alerts_split_name[,1])
+    ) %>%
+    rename(
+        cmrn_id = cmrn
+    )
 ```
+
+
 ```{r}
 casework_people <- dedupe_prep(
     source = casework_raw,
     columns = c("Client ID", "Legacy ID", "Client Name"),
     origin = "Unencrypted_CCHreport.xlsx"
-)
+) %>%
+    rename(
+        name = "Client Name"
+    )
 ```
+
+
+
+
+
 
 ```{r}
 
