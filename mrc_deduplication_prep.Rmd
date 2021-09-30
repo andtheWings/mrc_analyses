@@ -114,15 +114,6 @@ deaths_people <- dedupe_prep(
         ~ paste0(.x, ".deaths")
     )
 ```
-```{r}
-claims_people <- dedupe_prep(
-    source = claims_raw,
-    columns = rin_cc
-) %>%
-    rename_with(
-        ~ paste0(.x, ".claims")
-    )
-```
 
 ```{r}
 alerts_people_intermediate <- dedupe_prep(
@@ -179,7 +170,7 @@ people <- FHP_people %>%
             "dob.fhp" = "dob.deaths"
         ),
         suffix = c("", "")
-    ) 
+    )
 ```
 
 
