@@ -1,0 +1,86 @@
+---
+title: "mrc_people_prep"
+author: "Daniel P. Hall Riggins, MD"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+library(arrow)
+library(readxl)
+library(tidyverse)
+```
+
+```{r}
+all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
+```
+
+```{r}
+people_prep <- function(source, columns) {
+    print(
+        paste0(
+            "Initial number of records is ",
+            nrow(source)
+        )
+    )
+    distinct1 <- distinct(source)
+    print(
+        paste0(
+            "Which reduces to ",
+            nrow(distinct1),
+            " when filtering for distinct rows"
+        )
+    )
+    select2 <- select({{distinct1}}, {{columns}})
+    distinct3 <- distinct(select2)
+    print(
+        paste0(
+            "Which reduces to ",
+            nrow(distinct3),
+            " when filtering for distinct rows after selecting columns of interest"
+        )
+    )
+    return(distinct3)
+}
+```
+
+```{r}
+people_columns <- c(
+    mrc_id = "Record ID", 
+    last_name = "Client Last Name...55", 
+    first_name = "Client First Name...56", 
+    other_name = "Client Other name", 
+    dob = "Client DOB...58", 
+    sex = "Sex", 
+    black = "What is your race? (choice=Black)", 
+    white = "What is your race? (choice=White)",
+    asian = "What is your race? (choice=Asian/American Indian or Alaska native)",
+    pacific = "What is your race? (choice=Native Hawaiian or Pacific Islander)",
+    multiracial = "What is your race? (choice=Multiracial)",
+    other_race = "What is your race? (choice=Other)",
+    hispanic = "Do you consider yourself Hispanic or Latinx?",
+    mrc_admission_date = "MI1:Registration Date",
+    mrc_discharge_date = "Discharge Date"
+)
+
+mrc_people <- people_prep(all_raw, people_columns) %>%
+    group_by(mrc_id) %>%
+    summarize(
+        last_name = first(last_name),
+        first_name = first(first_name),
+        other_name = first(other_name),
+        dob = first(dob),
+        sex = first(sex),
+        black = first(black),
+        white = first(white),
+        asian = first(asian),
+        pacific = first(pacific),
+        multiracial = first(multiracial),
+        other_race = first(other_race),
+        hispanic = first(hispanic),
+        mrc_admission_date = first(mrc_admission_date),
+        mrc_discharge_date = last(mrc_discharge_date)
+    ) %>%
+    filter(!is.na(mrc_admission_date))
+```
+
