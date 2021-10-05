@@ -1,0 +1,26 @@
+---
+title: "JSON Constructor for MRC Standards"
+author: "Daniel P. Hall Riggins, MD"
+date: "9/28/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(datapasta)
+library(jsonlite)
+```
+
+
+```{r}
+import <- read.csv("import.csv")
+json <- jsonlite::toJSON(import)
+jsonlite::prettify(json)
+
+
+mrc_standards <- mrc_standards %>%
+    mutate(subcriteria = NA)
+
+mrc_standards$subcriteria[[1]] <- import
+```
+

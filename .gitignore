@@ -49,3 +49,5 @@ data/
 mrc_data/
 
 *.ipynb
+
+*.csv

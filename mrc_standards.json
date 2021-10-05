@@ -1,0 +1,401 @@
+[
+    {
+        "type":"standard",
+        "id": "MRC.S1",
+        "description": "Medical respite program provides safe and quality accommodations.",
+        "long_description":"Medical  respite  programs  provide  patients  with  space  to  heal  rest  and  perform  activities  of  daily  living (ADLs) while receiving care to recover from acute illness and injuries. As such, the physical space of medical respite programs should be habitable and support physical functioning, hygiene, and personal safety.",
+        "criteria":[
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C1",
+                "description": "A bed is available to each patient for 24 hours a day while admitted to the program.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C2",
+                "description": "Onsite showering and laundering facilities are available to patients to ensure access and ability to maintain hygiene.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C3",
+                "description": "Clean linens are provided upon admission.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C4",
+                "description": "The medical respite facility is accessible and usable to people who have disabilities, including but not limited to mobility impairments and other physical disabilities.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C5",
+                "description": "The medical respite facility provides access to secured storage for personal belongings and medications. When the program is not authorized to store/dispense medication by applicable governing bodies, the program will ensure other mechanisms for patients to securely store and access medications.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C6",
+                "description": "At least three meals per day are provided. Food services meet applicable public health department guidelines for food handling.",
+                "status": "Unaudited",
+                "sub_criteria":[
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C6.a",
+                        "description": "Non-congregate settings (including private and semi-private rooms in apartments or motels) may provide unprepared food if a fully equipped kitchen is available to the patient. If a kitchen is made available, it is  safe and hygienic and includes proper refrigeration and disposal of trash.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C6.b",
+                        "description": "Patients are provided education on dietary recommendations, based on diet available at medical respite and the diet available at the anticipated post-respite disposition.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C6.c",
+                        "description": "Food services are culturally appropriate, as needed.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    }
+                ],
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C7",
+                "description": "Medical respite programs located in standalone and/or congregate facilities maintain 24-hour access to staff. On-site staff (either clinical or non-clinical) is trained at minimum to provide first aid and basic life support services and communicate to outside emergency assistance.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C8",
+                "description": "Medical respite programs have 24-hour on-call medical support or a nurse call-line for non-emergency medical and behavioral health inquiries when clinical staff is not on site.",
+                "status": "Unaudited",
+                "sub_criteria": [
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C8.a",
+                        "description": "On-call medical support may be implemented through a partner or community organization.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C8.b",
+                        "description": "The medical respite patient has knowledge and access to on-call medical support information.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    }
+                ],
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C9",
+                "description": "The medical respite program has written policies and procedures for responding to life-threatening emergencies.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C10",
+                "description": "The medical respite facility is compliant with local and/or state fire safety standards governing its facility.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C11",
+                "description": "The medical respite program has a written code of resident conduct or behavioral agreement that describes program policies including potential causes for early discharge. This document is shared with and acknowledged by the patient at admission and is readily available throughout the medical respite stay.",
+                "status": "Unaudited",
+                "sub_criteria": null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S1.C12",
+                "description": "The medical respite program has policies and staff trainings to address safety, which include:",
+                "status": "Unaudited",
+                "sub_criteria": [
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.a",
+                        "description": "The handling of alcohol, illegal drugs, and unauthorized prescription drugs found on site",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.b",
+                        "description": "The handling of weapons brought into the facility",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.c",
+                        "description": "Strategies to maximize client and staff safety",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.d",
+                        "description": "Trauma-informed de-escalation",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.e",
+                        "description": "Appropriate staff response to threatening behavior or violence",
+                        "status": "Unaudited",
+                        "sub_criteria": [
+                            {
+                                "type": "sub-sub-criterion",
+                                "id": "MRC.S1.C12.e.i",
+                                "description": "Staff and consumers have opportunity to receive support or debrief after incidents",
+                                "status": "Unaudited",
+                                "sub_criteria": null,
+                                "last_audit": null,
+                                "next_audit": null,
+                                "audit_frequency": null
+                            },
+                            {
+                                "type": "sub-sub-criterion",
+                                "id": "MRC.S1.C12.e.ii",
+                                "description": "Threatening behavior is clearly defined and based on observable actions",
+                                "status": "Unaudited",
+                                "sub_criteria": null,
+                                "last_audit": null,
+                                "next_audit": null,
+                                "audit_frequency": null
+                            }
+                        ],
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.f",
+                        "description": "Patient visitors entering the medical respite facility",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.g",
+                        "description": "A written procedure for managing, reporting, and responding to incidents, including patient falls. This procedure includes steps to determine changes to prevent future related incidents",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    },
+                    {
+                        "type": "sub-criterion",
+                        "id": "MRC.S1.C12.h",
+                        "description": "Emergency planning and procedures should be considered, e.g. outbreak of infectious disease, state of emergency, disaster response, and inclement weather plans.",
+                        "status": "Unaudited",
+                        "sub_criteria": null,
+                        "last_audit": null,
+                        "next_audit": null,
+                        "audit_frequency": null
+                    }
+                ],
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            }
+        ]
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S2",
+        "description": "Medical respite program provides quality environmental services.",
+        "long_description": "Like other clinical settings, medical respite programs must manage infectious disease and handle biomedical and pharmaceutical waste. Medical respite programs should follow  applicable local or state guidelines and regulations related to hazardous waste handling and disposal, disease prevention, and safety. Written policies and procedures described below should reflect all applicable local, state, or federal guidelines and regulations.",
+        "criteria":[
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C1",
+                "description": "The medical respite program has a written policy and procedure for safe storage, disposal, and\nhandling of biomedical and pharmaceutical waste, including expired or unused medications and\nneedles.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C2",
+                "description": "When patient medications are stored and/or handled by staff, the medical respite program follows\nstate regulations for the storage, handling, security, and disposal of patient medications.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C3",
+                "description": "The medical respite program has a written protocol for preventing and managing exposure to bodily\nfluids and other biohazards.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C4",
+                "description": "The medical respite program has written protocols in place to promote infection control and the\nmanagement of communicable diseases (including but not limited to scabies, Methicillin-resistant\nStaphylococcus aureus (MRSA), enteric pathogens, influenza, and Covid-19). Protocols in alignment\nwith local health department and Centers for Disease Control (CDC) guidelines include:",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C5",
+                "description": "The medical respite program follows applicable reporting requirements of communicable diseases for\nlocal and state health departments.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C6",
+                "description": "The medical respite premises and equipment are cleaned and disinfected according to policies and\nprocedures or manufacturers’ instructions to prevent, minimize, and control infection or illness,\naccording to CDC and local health department guidelines.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            },
+            {
+                "type": "criterion",
+                "id": "MRC.S2.C7",
+                "description": "A pest control program is implemented and documented.",
+                "status": "Unaudited",
+                "sub_criteria":null,
+                "last_audit": null,
+                "next_audit": null,
+                "audit_frequency": null
+            }
+        ],
+        "last_audit": null,
+        "next_audit": null,
+        "audit_frequency": null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S3",
+        "description": "Medical respite program manages timely and safe care transitions to medical respite from acute care, specialty care, and/or community settings.",
+        "criteria":null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S4",
+        "description": "Medical respite program administers high quality post-acute clinical care.",
+        "criteria":null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S5",
+        "description": "Medical respite program assists in health care coordination, provides wraparound services, and facilitates access to comprehensive support services.",
+        "criteria":null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S6",
+        "description": "Medical respite program facilitates safe and appropriate care transitions out of medical respite care.",
+        "criteria":null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S7",
+        "description": "Medical respite care personnel are equipped to address the needs of people experiencing homelessness.",
+        "criteria":null
+    },
+    {
+        "type":"standard",
+        "id": "MRC.S8",
+        "description": "Medical respite care is driven by quality improvement.",
+        "criteria":null
+    }
+]
