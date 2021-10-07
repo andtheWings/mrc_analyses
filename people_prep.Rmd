@@ -5,9 +5,8 @@ date: "10/5/2021"
 output: html_document
 ---
 
-```{r message=FALSE, warning=FALSE}
+```{r}
 library(arrow)
-library(readxl)
 library(tidyverse)
 ```
 
@@ -66,21 +65,28 @@ people_columns <- c(
 mrc_people <- people_prep(all_raw, people_columns) %>%
     group_by(mrc_id) %>%
     summarize(
-        last_name = first(last_name),
-        first_name = first(first_name),
-        other_name = first(other_name),
-        dob = first(dob),
-        sex = first(sex),
-        black = first(black),
-        white = first(white),
-        asian = first(asian),
-        pacific = first(pacific),
-        multiracial = first(multiracial),
-        other_race = first(other_race),
-        hispanic = first(hispanic),
-        mrc_admission_date = first(mrc_admission_date),
+        across(
+            .cols = last_name:mrc_admission_date,
+            .fns = ~ first(.x)
+        ),
         mrc_discharge_date = last(mrc_discharge_date)
     ) %>%
-    filter(!is.na(mrc_admission_date))
+    filter(
+        !is.na(mrc_admission_date)
+    ) %>%
+    mutate(
+        sex = as_factor(sex),
+        across(
+            .cols = black:hispanic,
+            .fns = ~ case_when(
+                .x %in% c("Checked", "Yes") ~ TRUE,
+                .x %in% c("Unchecked", "No") ~ FALSE
+            )
+        )
+    )
+```
+
+```{r}
+str(mrc_people)
 ```
 
