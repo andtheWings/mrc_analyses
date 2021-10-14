@@ -1,5 +1,5 @@
 ---
-title: "mrc_people_prep"
+title: "Prepping variables for MRC Mortality Analysis"
 author: "Daniel P. Hall Riggins, MD"
 date: "10/5/2021"
 output: html_document
@@ -43,6 +43,61 @@ people_prep <- function(source, columns) {
 }
 ```
 
+
+To get total referrals (174), get the max number for client ID:
+
+```{r}
+max(all_raw$`Record ID`)
+```
+Summarize referral sources:
+
+```{r}
+referrals <- all_raw %>%
+    select(
+        record = `Record ID`, 
+        referrer = `Referring Organization`,
+        primary_cat = `Primary Referral Category`,
+        disposition = `Disposition?`
+    ) %>%
+    filter(
+        !is.na(referrer) | !is.na(primary_cat) | !is.na(disposition)
+    ) %>%
+    mutate(
+        referrer = as_factor(referrer),
+        primary_cat = as_factor(primary_cat),
+        disposition = as_factor(disposition)
+    )
+
+referrers <- referrals %>%
+    group_by(referrer) %>%
+    summarize(count = n()) %>%
+    mutate(percent = (count/174*100))
+
+dispo_cat_totals <- referrals %>%
+    group_by(
+        disposition
+    ) %>%
+    summarize(
+        cat_total = n()
+    ) 
+
+referral_summary <- referrals %>%
+    group_by(
+        primary_cat,
+        disposition
+    ) %>%
+    summarize(
+        count = n()
+    ) %>%
+    full_join(
+        dispo_cat_totals
+    ) %>%
+    mutate(
+        percent = count/cat_total
+    )
+```
+
+
 ```{r}
 people_columns <- c(
     mrc_id = "Record ID", 
@@ -58,6 +113,17 @@ people_columns <- c(
     multiracial = "What is your race? (choice=Multiracial)",
     other_race = "What is your race? (choice=Other)",
     hispanic = "Do you consider yourself Hispanic or Latinx?",
+    mental = "Do You have any mental health condition",
+    hallucinations = "Have you ever been hospitalized for psychiatric or substance use conditions?",
+    heroin_fentanyl = "heroin or fentanyl",
+    pain_pills = "pain pills not prescribed to you",
+    methadone = "methadone",
+    bupe = "buprenorphine (Suboxone)",
+    OUD_program = "Are you dispensed (methadone/burprenorphine) as part of a program?",
+    alcohol_disorder = "Have you been hospitalized for dangerous alcohol withdrawal, had withdrawal seizures or hallucinations, or delirium tremens?",
+    other_drugs = "Do you take any other street drugs?",
+    referral_cat = "Primary Referral Category",
+    insurance_cat = "What insurance do you have?",
     mrc_admission_date = "MI1:Registration Date",
     mrc_discharge_date = "Discharge Date"
 )
@@ -86,7 +152,8 @@ mrc_people <- people_prep(all_raw, people_columns) %>%
     )
 ```
 
+
 ```{r}
-str(mrc_people)
+summary(mrc_people)
 ```
 
