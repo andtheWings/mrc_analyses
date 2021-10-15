@@ -231,16 +231,24 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             case_when(
                 str_detect(
                     mrc_discharge_dest,
-                    "bridge|sro|permanent|apartment|recovery|fillmore"
+                    "bridge|sro|permanent|apartment|recovery|fillmore|transitional|greenwood|airport"
                 ) ~ "Bridge/Stable Housing",
                 str_detect(
                     mrc_discharge_dest,
-                    "haymarket|rehab|(treatment center)"
+                    "haymarket|rehab|(treatment center)|((?=.*h.a.s)(?=.*program))"
                 ) ~ "Residential Treatment",
                 str_detect(
                     mrc_discharge_dest,
-                    "forward|transfer|((?=.*shelter)(?=.*evanston))"
+                    "forward|((?=.*transfer)(?=.*room))|((?=.*shelter)(?=.*evanston))|rm|hf|((?=.*211)(?=.*fl))"
                 ) ~ "Interim/Emergency Housing, Suburbs",
+                str_detect(
+                    mrc_discharge_dest,
+                    "boulevard|julian"
+                ) ~ "Interim/Emergency Housing, Chicago",
+                str_detect(
+                    mrc_discharge_dest,
+                    "temporary|transfer"
+                ) ~ "Interim/Emergency Housing, Unclear Region",
                 str_detect(
                     mrc_discharge_dest,
                     "family|brother|sister|cousin|friend"
@@ -251,16 +259,20 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 ) ~ "ED/Hospital",
                 str_detect(
                     mrc_discharge_dest,
-                    "temporary"
-                ) ~ "Interim/Emergency Housing, Unclear Region",
+                    "declined|abscond"
+                ) ~ "Absconded/Without Plan",
                 str_detect(
                     mrc_discharge_dest,
-                    "declined"
-                ) ~ "Absconded/Without Plan"
+                    "home"
+                ) ~ "Unclear"
             )
         )
-    )
+    ) %>%
+    select(mrc_discharge_dest, discharge_dest_cat)
 ```
+
+
+Ensure not missing any discharge destinations
 
 ```{r}
 summary(
