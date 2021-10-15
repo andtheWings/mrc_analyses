@@ -127,7 +127,8 @@ people_columns <- c(
     referral_cat = "Primary Referral Category",
     insurance_cat = "What insurance do you have?",
     mrc_admission_date = "MI1:Registration Date",
-    mrc_discharge_date = "Discharge Date"
+    mrc_discharge_date = "Discharge Date",
+    mrc_discharge_dest = "Discharge Destination"
 )
 ```
 
@@ -139,7 +140,10 @@ mrc_people <- people_prep(all_raw, people_columns) %>%
             .cols = last_name:mrc_admission_date,
             .fns = ~ first(.x)
         ),
-        mrc_discharge_date = last(mrc_discharge_date)
+        across(
+            .cols = mrc_discharge_date:mrc_discharge_dest,
+            .fns = ~ last(.x)
+        )
     ) %>%
     filter(
         !is.na(mrc_admission_date)
@@ -175,7 +179,8 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             .cols = c(
                 sex,
                 referral_cat,
-                insurance_cat
+                insurance_cat,
+                mrc_discharge_dest
             ),
             .fns = ~ as_factor(.x)
         ),
@@ -219,6 +224,23 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                         "crack|marijuana|cocaine|heroin"
                     ) ~ "Yes",
                 hospitalized == TRUE ~ "Maybe"
+            )
+        ),
+        mrc_discharge_dest = str_to_lower(mrc_discharge_dest),
+        discharge_dest_cat = as_factor(
+            case_when(
+                str_detect(
+                    mrc_discharge_dest,
+                    "bridge"
+                ) ~ "Bridge/Stable Housing",
+                str_detect(
+                    mrc_discharge_dest,
+                    "haymarket|rehab"
+                ) ~ "Residential Treatment",
+                str_detect(
+                    mrc_discharge_dest,
+                    "housing forward"
+                ) ~ "Interim/Emergency Housing, Suburbs"
             )
         )
     )
