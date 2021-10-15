@@ -231,22 +231,43 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             case_when(
                 str_detect(
                     mrc_discharge_dest,
-                    "bridge"
+                    "bridge|sro|permanent|apartment|recovery|fillmore"
                 ) ~ "Bridge/Stable Housing",
                 str_detect(
                     mrc_discharge_dest,
-                    "haymarket|rehab"
+                    "haymarket|rehab|(treatment center)"
                 ) ~ "Residential Treatment",
                 str_detect(
                     mrc_discharge_dest,
-                    "housing forward"
-                ) ~ "Interim/Emergency Housing, Suburbs"
+                    "forward|transfer|((?=.*shelter)(?=.*evanston))"
+                ) ~ "Interim/Emergency Housing, Suburbs",
+                str_detect(
+                    mrc_discharge_dest,
+                    "family|brother|sister|cousin|friend"
+                ) ~ "Family/Friend/Other",
+                str_detect(
+                    mrc_discharge_dest,
+                    "ltac|hospital"
+                ) ~ "ED/Hospital",
+                str_detect(
+                    mrc_discharge_dest,
+                    "temporary"
+                ) ~ "Interim/Emergency Housing, Unclear Region",
+                str_detect(
+                    mrc_discharge_dest,
+                    "declined"
+                ) ~ "Absconded/Without Plan"
             )
         )
     )
 ```
 
 ```{r}
-summary(clustered_mrc_people)
+summary(
+    select(
+        clustered_mrc_people,
+        c(sex, black, white, asian, pacific, multiracial, other_race, hispanic, referral_cat, insurance_cat, age_cat, mental_disorder, substance_disorder, discharge_dest_cat)
+    )
+)
 ```
 
