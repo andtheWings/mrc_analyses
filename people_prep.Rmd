@@ -199,11 +199,12 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             ordered = TRUE,
             levels = c("0-24", "25-34", "35-44", "45-54", "55-64", "65+")
         ),
-        mental_disorder =
+        mental_disorder = as_factor(
             case_when(
                 mental_condition == TRUE |
                     hallucinations == TRUE ~ "Yes",
                 hospitalized == TRUE ~ "Maybe"
+            )
         ),
         substance_disorder = as_factor(
             case_when(
@@ -213,7 +214,10 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                     bupe == TRUE |
                     OUD_program == TRUE |
                     alcohol_disorder == TRUE |
-                    other_drugs == TRUE ~ "Yes",
+                    str_detect(
+                        other_drugs,
+                        "crack|marijuana|cocaine|heroin"
+                    ) ~ "Yes",
                 hospitalized == TRUE ~ "Maybe"
             )
         )
