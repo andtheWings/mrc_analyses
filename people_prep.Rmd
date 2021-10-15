@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 library(arrow)
 library(tidyverse)
+library(lubridate)
 ```
 
 ```{r}
@@ -113,8 +114,9 @@ people_columns <- c(
     multiracial = "What is your race? (choice=Multiracial)",
     other_race = "What is your race? (choice=Other)",
     hispanic = "Do you consider yourself Hispanic or Latinx?",
-    mental = "Do You have any mental health condition",
-    hallucinations = "Have you ever been hospitalized for psychiatric or substance use conditions?",
+    mental_condition = "Do You have any mental health condition",
+    hallucinations = "Do you hear voices or see things that others might not see?",
+    hospitalized = "Have you ever been hospitalized for psychiatric or substance use conditions?",
     heroin_fentanyl = "heroin or fentanyl",
     pain_pills = "pain pills not prescribed to you",
     methadone = "methadone",
@@ -127,7 +129,9 @@ people_columns <- c(
     mrc_admission_date = "MI1:Registration Date",
     mrc_discharge_date = "Discharge Date"
 )
+```
 
+```{r}
 mrc_people <- people_prep(all_raw, people_columns) %>%
     group_by(mrc_id) %>%
     summarize(
@@ -139,21 +143,84 @@ mrc_people <- people_prep(all_raw, people_columns) %>%
     ) %>%
     filter(
         !is.na(mrc_admission_date)
-    ) %>%
-    mutate(
-        sex = as_factor(sex),
-        across(
-            .cols = black:hispanic,
-            .fns = ~ case_when(
-                .x %in% c("Checked", "Yes") ~ TRUE,
-                .x %in% c("Unchecked", "No") ~ FALSE
-            )
-        )
     )
 ```
 
 
 ```{r}
-summary(mrc_people)
+write_parquet(mrc_people, "data/mrc_people_model/mrc_people.parquet")
+```
+
+
+```{r}
+clustered_mrc_people_raw <- read_parquet("data/mrc_people_model/clustered_mrc_people.parquet")
+```
+
+```{r}
+clustered_mrc_people <- clustered_mrc_people_raw %>%
+    mutate(
+        across(
+            .cols = c(
+                dob, 
+                mrc_admission_date,
+                mrc_discharge_date
+            ),
+            .fns = ~ ymd(.x)
+        ),
+        across(
+            .cols = last_name:first_name,
+            .fns = ~ str_to_title(.x)
+        ),
+        across(
+            .cols = c(
+                sex,
+                referral_cat,
+                insurance_cat
+            ),
+            .fns = ~ as_factor(.x)
+        ),
+        across(
+            .cols = black:alcohol_disorder,
+            .fns = ~ case_when(
+                .x %in% c("checked", "yes") ~ TRUE,
+                .x %in% c("unchecked", "no") ~ FALSE
+            )
+        ),
+        age = floor(dob %--% mrc_admission_date / dyears(1)),
+        age_cat = factor(
+            case_when(
+                age < 25 ~ "0-24",
+                age > 24 & age < 35 ~ "25-34",
+                age > 34 & age < 45 ~ "35-44",
+                age > 44 & age < 55 ~ "45-54",
+                age > 54 & age < 65 ~ "55-64",
+                age > 64 ~ "65+"
+            ),
+            ordered = TRUE,
+            levels = c("0-24", "25-34", "35-44", "45-54", "55-64", "65+")
+        ),
+        mental_disorder =
+            case_when(
+                mental_condition == TRUE |
+                    hallucinations == TRUE ~ "Yes",
+                hospitalized == TRUE ~ "Maybe"
+        ),
+        substance_disorder = as_factor(
+            case_when(
+                heroin_fentanyl == TRUE |
+                    pain_pills == TRUE |
+                    methadone == TRUE |
+                    bupe == TRUE |
+                    OUD_program == TRUE |
+                    alcohol_disorder == TRUE |
+                    other_drugs == TRUE ~ "Yes",
+                hospitalized == TRUE ~ "Maybe"
+            )
+        )
+    )
+```
+
+```{r}
+summary(clustered_mrc_people)
 ```
 
