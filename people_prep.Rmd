@@ -88,11 +88,6 @@ people_columns <- c(
 ```
 
 ```{r}
-    
-```
-
-
-```{r}
 mrc_just_people <- people_prep(all_raw, people_columns)
 ```
 
@@ -108,6 +103,62 @@ mrc_people_admDate <- all_raw %>%
     full_join(mrc_just_people)
 ```
 ```{r}
+mrc_people_admDate_dischDate <- all_raw %>%
+    select(
+        mrc_id = "Record ID",
+        mrc_discharge_date = "Discharge Date"
+    ) %>%
+    filter(
+        mrc_id %in% mrc_people$mrc_id &
+            !is.na(mrc_discharge_date)
+    ) %>%
+    group_by(mrc_id) %>%
+    summarize(mrc_discharge_date = max(mrc_discharge_date)) %>%
+    full_join(mrc_people_admDate)
+```
+
+```{r}
+mrc_people <- mrc_discharge_dest <- all_raw %>%
+    select(
+        mrc_id = "Record ID",
+        mrc_discharge_dest = "Discharge Destination"
+    ) %>%
+    filter(
+        mrc_id %in% mrc_people$mrc_id &
+            !is.na(mrc_discharge_dest)
+    ) %>% 
+    group_by(mrc_id) %>%
+    summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
+    full_join(mrc_people_admDate_dischDate)
+```
+Manual corrections:
+
+```{r}
+mrc_people[60,2] = "Unknown"
+mrc_people[60,3] = as_date("2021-03-27")
+mrc_people[61,2] = "Rush Oak Park ED"
+mrc_people[61,3] = as_date("2021-03-12")
+mrc_people[62,2] = "Unknown"
+mrc_people[62,3] = as_date("2021-03-09")
+mrc_people[64,2] = "Housing Forward"
+mrc_people[64,3] = as_date("2021-04-30")
+mrc_people[67,2] = "Unknown"
+mrc_people[67,3] = as_date("2021-05-23")
+mrc_people[68,2] = "Stroger Hospital"
+mrc_people[68,3] = as_date("2021-07-03")
+mrc_people[70,2] = "Unknown"
+mrc_people[70,3] = as_date("2021-09-09")
+mrc_people[73,2] = "Unknown"
+mrc_people[73,3] = as_date("2021-08-22")
+```
+
+
+```{r}
+mrc_discharge_dest %>%
+    group_by(mrc_id) %>%
+    summarise(n = n()) %>%
+    filter(n > 1) %>%
+    left_join(mrc_discharge_dest)
 
 ```
 
