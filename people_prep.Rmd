@@ -39,65 +39,22 @@ people_prep <- function(source, columns) {
             nrow(distinct3),
             " when filtering for distinct rows after selecting columns of interest"
         )
+    ) 
+    filter4 <- filter(
+        distinct3,
+        distinct3$disposition %in% "Accepted" & 
+            !(is.na(distinct3$last_name))
     )
-    return(distinct3)
+    print(
+        paste0(
+            "Which reduces to ",
+            nrow(filter4),
+            " when filtering for accepted clients"
+        )
+    ) 
+    return(filter4)
 }
 ```
-
-
-To get total referrals (174), get the max number for client ID:
-
-```{r}
-max(all_raw$`Record ID`)
-```
-Summarize referral sources:
-
-```{r}
-referrals <- all_raw %>%
-    select(
-        record = `Record ID`, 
-        referrer = `Referring Organization`,
-        primary_cat = `Primary Referral Category`,
-        disposition = `Disposition?`
-    ) %>%
-    filter(
-        !is.na(referrer) | !is.na(primary_cat) | !is.na(disposition)
-    ) %>%
-    mutate(
-        referrer = as_factor(referrer),
-        primary_cat = as_factor(primary_cat),
-        disposition = as_factor(disposition)
-    )
-
-referrers <- referrals %>%
-    group_by(referrer) %>%
-    summarize(count = n()) %>%
-    mutate(percent = (count/174*100))
-
-dispo_cat_totals <- referrals %>%
-    group_by(
-        disposition
-    ) %>%
-    summarize(
-        cat_total = n()
-    ) 
-
-referral_summary <- referrals %>%
-    group_by(
-        primary_cat,
-        disposition
-    ) %>%
-    summarize(
-        count = n()
-    ) %>%
-    full_join(
-        dispo_cat_totals
-    ) %>%
-    mutate(
-        percent = count/cat_total
-    )
-```
-
 
 ```{r}
 people_columns <- c(
@@ -126,28 +83,32 @@ people_columns <- c(
     other_drugs = "Do you take any other street drugs?",
     referral_cat = "Primary Referral Category",
     insurance_cat = "What insurance do you have?",
-    mrc_admission_date = "MI1:Registration Date",
-    mrc_discharge_date = "Discharge Date",
-    mrc_discharge_dest = "Discharge Destination"
+    disposition = "Disposition?"
 )
 ```
 
 ```{r}
-mrc_people <- people_prep(all_raw, people_columns) %>%
-    group_by(mrc_id) %>%
-    summarize(
-        across(
-            .cols = last_name:mrc_admission_date,
-            .fns = ~ first(.x)
-        ),
-        across(
-            .cols = mrc_discharge_date:mrc_discharge_dest,
-            .fns = ~ last(.x)
-        )
+    
+```
+
+
+```{r}
+mrc_just_people <- people_prep(all_raw, people_columns)
+```
+
+```{r}
+mrc_people_admDate <- all_raw %>%
+    select(
+        mrc_id = "Record ID",
+        mrc_admission_date = "MI1:Registration Date"
     ) %>%
-    filter(
-        !is.na(mrc_admission_date)
-    )
+    filter(mrc_id %in% mrc_people$mrc_id) %>%
+    group_by(mrc_id) %>%
+    summarize(mrc_admission_date = first(mrc_admission_date)) %>%
+    full_join(mrc_just_people)
+```
+```{r}
+
 ```
 
 
@@ -270,9 +231,6 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
     ) %>%
     select(mrc_discharge_dest, discharge_dest_cat)
 ```
-
-
-Ensure not missing any discharge destinations
 
 ```{r}
 summary(
