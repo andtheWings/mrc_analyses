@@ -82,6 +82,7 @@ people_columns <- c(
     alcohol_disorder = "Have you been hospitalized for dangerous alcohol withdrawal, had withdrawal seizures or hallucinations, or delirium tremens?",
     other_drugs = "Do you take any other street drugs?",
     referral_cat = "Primary Referral Category",
+    care_need = "What is the care need?",
     insurance_cat = "What insurance do you have?",
     disposition = "Disposition?"
 )
@@ -251,15 +252,15 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 ) ~ "Residential Treatment",
                 str_detect(
                     mrc_discharge_dest,
-                    "forward|((?=.*transfer)(?=.*room))|((?=.*shelter)(?=.*evanston))|rm|hf|((?=.*211)(?=.*fl))"
-                ) ~ "Interim/Emergency Housing, Suburbs",
-                str_detect(
-                    mrc_discharge_dest,
                     "boulevard|julian"
                 ) ~ "Interim/Emergency Housing, Chicago",
                 str_detect(
                     mrc_discharge_dest,
-                    "temporary|transfer"
+                    "forward|((?=.*transfer)(?=.*room))|((?=.*shelter)(?=.*evanston))|rm|hf|((?=.*211)(?=.*fl))"
+                ) ~ "Interim/Emergency Housing, Suburbs",
+                str_detect(
+                    mrc_discharge_dest,
+                    "temporary|transfer|shelter"
                 ) ~ "Interim/Emergency Housing, Unclear Region",
                 str_detect(
                     mrc_discharge_dest,
@@ -267,7 +268,7 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 ) ~ "Family/Friend/Other",
                 str_detect(
                     mrc_discharge_dest,
-                    "ltac|hospital"
+                    "ltac|hospital|rush"
                 ) ~ "ED/Hospital",
                 str_detect(
                     mrc_discharge_dest,
@@ -276,19 +277,12 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 str_detect(
                     mrc_discharge_dest,
                     "home"
-                ) ~ "Unclear"
+                ) ~ "Unclear",
+                str_detect(
+                    mrc_discharge_dest,
+                    "unknown"
+                ) ~ "Unknown"
             )
         )
-    ) %>%
-    select(mrc_discharge_dest, discharge_dest_cat)
-```
-
-```{r}
-summary(
-    select(
-        clustered_mrc_people,
-        c(sex, black, white, asian, pacific, multiracial, other_race, hispanic, referral_cat, insurance_cat, age_cat, mental_disorder, substance_disorder, discharge_dest_cat)
     )
-)
 ```
-
