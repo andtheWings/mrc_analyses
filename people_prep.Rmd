@@ -9,6 +9,7 @@ output: html_document
 library(arrow)
 library(tidyverse)
 library(lubridate)
+library(xlsx)
 ```
 
 ```{r}
@@ -286,3 +287,42 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
         )
     )
 ```
+
+```{r}
+count_and_percent <- function(tbl, var_name) {
+    tbl %>%
+    group_by(.data[[var_name]]) %>%
+    summarize(count = n()) %>%
+    mutate(
+        variable = var_name,
+        percent = round(
+            (count/nrow(tbl)*100),
+            digits = 2
+        )
+    ) %>%
+    rename(
+        category = .data[[var_name]]
+    )
+}
+```
+
+```{r}
+columns <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
+summary_tables <- map(columns, ~count_and_percent(clustered_mrc_people, .x))
+```
+
+
+```{r}
+purrr::map2(
+    .x = summary_tables,
+    .y = columns,
+    .f = ~ xlsx::write.xlsx(
+        x = .x,
+        file = "data/mrc_summary_tables.xlsx",
+        sheetName = .y,
+        append = TRUE
+    )
+)
+```
+
+
