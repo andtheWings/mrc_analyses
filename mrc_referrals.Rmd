@@ -6,7 +6,22 @@ output: html_document
 ---
 
 ```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+
+```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
+```
+
+Total months of operations:
+
+```{r}
+start_date <- as_date("2020-12-08") # From date of communication in 2nd record
+date_of_export <- as_date("2021-09-30") # From time-stamp on data file
+operation_months <- start_date %--% date_of_export / dmonths(1)
+operation_months
 ```
 
 To get total referrals (174), get the max number for client ID:
