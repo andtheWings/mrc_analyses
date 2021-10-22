@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(xlsx)
 ```
 
 
@@ -54,7 +55,10 @@ referrers <- referrals %>%
     group_by(referrer) %>%
     summarize(count = n()) %>%
     mutate(
-        percent = (count/174*100),
+        percent = round(
+            (count/174*100),
+            digits = 2
+        ),
         variable = "referral_source"
     )
 
@@ -78,12 +82,28 @@ referral_summary <- referrals %>%
         dispo_cat_totals
     ) %>%
     mutate(
-        percent = count/cat_total*100,
+        percent = round(
+            count/cat_total*100,
+            digits = 2
+        ),
         variable = "referral_cat_by_dispo"
-    )
+    ) %>%
+    ungroup()
 ```
 
 ```{r}
+referral_summary_tables <- list(referral_summary, referrers)
+referral_summary_names <- c("referral_cat_by_dispo", "referral_source")
 
+purrr::map2(
+    .x = referral_summary_tables,
+    .y = referral_summary_names,
+    .f = ~ xlsx::write.xlsx(
+        x = .x,
+        file = "data/mrc_summary_tables.xlsx",
+        sheetName = .y,
+        append = TRUE
+    )
+)
 ```
 
