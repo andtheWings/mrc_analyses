@@ -104,6 +104,7 @@ mrc_people_admDate <- all_raw %>%
     summarize(mrc_admission_date = first(mrc_admission_date)) %>%
     full_join(mrc_just_people)
 ```
+
 ```{r}
 mrc_people_admDate_dischDate <- all_raw %>%
     select(
@@ -133,6 +134,7 @@ mrc_people <- mrc_discharge_dest <- all_raw %>%
     summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
     full_join(mrc_people_admDate_dischDate)
 ```
+
 Manual corrections:
 
 ```{r}
@@ -178,24 +180,15 @@ clustered_mrc_people_raw <- read_parquet("data/mrc_people_model/clustered_mrc_pe
 clustered_mrc_people <- clustered_mrc_people_raw %>%
     mutate(
         across(
-            .cols = c(
-                dob, 
-                mrc_admission_date,
-                mrc_discharge_date
-            ),
+            .cols = c(dob, mrc_admission_date, mrc_discharge_date),
             .fns = ~ ymd(.x)
         ),
         across(
-            .cols = last_name:first_name,
+            .cols = c(first_name, last_name, other_name),
             .fns = ~ str_to_title(.x)
         ),
         across(
-            .cols = c(
-                sex,
-                referral_cat,
-                insurance_cat,
-                mrc_discharge_dest
-            ),
+            .cols = c(sex, referral_cat, insurance_cat, mrc_discharge_dest),
             .fns = ~ as_factor(.x)
         ),
         across(
@@ -208,7 +201,7 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
         age = floor(dob %--% mrc_admission_date / dyears(1)),
         age_cat = factor(
             case_when(
-                age < 25 ~ "0-24",
+                age < 25 ~ "<25",
                 age > 24 & age < 35 ~ "25-34",
                 age > 34 & age < 45 ~ "35-44",
                 age > 44 & age < 55 ~ "45-54",
@@ -216,7 +209,7 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 age > 64 ~ "65+"
             ),
             ordered = TRUE,
-            levels = c("0-24", "25-34", "35-44", "45-54", "55-64", "65+")
+            levels = c("<25", "25-34", "35-44", "45-54", "55-64", "65+")
         ),
         mental_disorder = as_factor(
             case_when(
