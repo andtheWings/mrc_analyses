@@ -46,13 +46,17 @@ referrals <- all_raw %>%
     mutate(
         referrer = as_factor(referrer),
         primary_cat = as_factor(primary_cat),
-        disposition = as_factor(disposition)
+        disposition = as_factor(disposition),
+        
     )
 
 referrers <- referrals %>%
     group_by(referrer) %>%
     summarize(count = n()) %>%
-    mutate(percent = (count/174*100))
+    mutate(
+        percent = (count/174*100),
+        variable = "referral_source"
+    )
 
 dispo_cat_totals <- referrals %>%
     group_by(
@@ -74,6 +78,12 @@ referral_summary <- referrals %>%
         dispo_cat_totals
     ) %>%
     mutate(
-        percent = count/cat_total
+        percent = count/cat_total*100,
+        variable = "referral_cat_by_dispo"
     )
 ```
+
+```{r}
+
+```
+
