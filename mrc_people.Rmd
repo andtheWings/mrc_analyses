@@ -300,20 +300,28 @@ count_and_percent <- function(tbl, var_name) {
 ```
 
 ```{r}
-columns <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
-summary_tables <- map(columns, ~count_and_percent(clustered_mrc_people, .x))
+people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
+
+people_summary_tables <- map(
+    people_summary_names, 
+    ~count_and_percent(clustered_mrc_people, .x)
+)
 ```
 
 
 ```{r}
+# googlesheets4::gs4_create(
+#     name = "mrc_summary_stats",
+#     sheets = c(people_summary_names, referral_summary_names)
+# )
+
 purrr::map2(
-    .x = summary_tables,
-    .y = columns,
-    .f = ~ xlsx::write.xlsx(
-        x = .x,
-        file = "data/mrc_summary_tables.xlsx",
-        sheetName = .y,
-        append = TRUE
+    .x = people_summary_tables,
+    .y = people_summary_names,
+    .f = ~ googlesheets4::write_sheet(
+        data = .x,
+        ss = "https://docs.google.com/spreadsheets/d/1Set-aoj0jq4fCLemwu2tnj8rQsfOa8Ai-AIS8VK8it8/edit?usp=sharing",
+        sheet = .y
     )
 )
 ```
