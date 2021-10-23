@@ -1,30 +1,39 @@
 ---
-title: "Prepping variables for MRC Mortality Analysis"
+title: "Compiling Summary Statistics for the Cook County Medical Respite Center"
 author: "Daniel P. Hall Riggins, MD"
-date: "10/5/2021"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
+
+Load needed libraries:
 
 ```{r}
 library(arrow)
 library(tidyverse)
 library(lubridate)
-library(xlsx)
 ```
+
+Import data from RedCap:
 
 ```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
 ```
 
+Create function for initial collection of people-level data:
+
 ```{r}
-people_prep <- function(source, columns) {
+# Function takes a source file and desired columns as input arguments
+collect_people_data <- function(source, columns) {
+    # Print total number of records before processing
     print(
         paste0(
             "Initial number of records is ",
             nrow(source)
         )
     )
+    # Filter for distinct records
     distinct1 <- distinct(source)
+    # Print number of distinct records
     print(
         paste0(
             "Which reduces to ",
@@ -32,20 +41,26 @@ people_prep <- function(source, columns) {
             " when filtering for distinct rows"
         )
     )
+    # Select only variables related to people-level data
     select2 <- select({{distinct1}}, {{columns}})
+    # Filter for distinct people-level records
     distinct3 <- distinct(select2)
+    # Print number of distinct people-level records
     print(
         paste0(
             "Which reduces to ",
             nrow(distinct3),
             " when filtering for distinct rows after selecting columns of interest"
         )
-    ) 
+    )
+    # Filter for only people actually admitted to the MRC
     filter4 <- filter(
         distinct3,
+        # Criteria are their referral disposition was accepted and they have a last name in the record
         distinct3$disposition %in% "Accepted" & 
             !(is.na(distinct3$last_name))
     )
+    # Print number of admitted clients
     print(
         paste0(
             "Which reduces to ",
@@ -56,6 +71,8 @@ people_prep <- function(source, columns) {
     return(filter4)
 }
 ```
+
+Specify desired people-level variables:
 
 ```{r}
 people_columns <- c(
@@ -89,9 +106,13 @@ people_columns <- c(
 )
 ```
 
+Run custom function defined above to collect admitted client records:
+
 ```{r}
-mrc_just_people <- people_prep(all_raw, people_columns)
+mrc_just_people <- collect_people_data(all_raw, people_columns)
 ```
+
+Collect registration dates and join to the people table:
 
 ```{r}
 mrc_people_admDate <- all_raw %>%
@@ -99,11 +120,15 @@ mrc_people_admDate <- all_raw %>%
         mrc_id = "Record ID",
         mrc_admission_date = "MI1:Registration Date"
     ) %>%
+    # Only use records associated with an admitted client
     filter(mrc_id %in% mrc_people$mrc_id) %>%
     group_by(mrc_id) %>%
+    # Filter out all the NA rows
     summarize(mrc_admission_date = first(mrc_admission_date)) %>%
     full_join(mrc_just_people)
 ```
+
+Collect discharge dates and join to the people table:
 
 ```{r}
 mrc_people_admDate_dischDate <- all_raw %>%
@@ -111,14 +136,18 @@ mrc_people_admDate_dischDate <- all_raw %>%
         mrc_id = "Record ID",
         mrc_discharge_date = "Discharge Date"
     ) %>%
+    # Only use records associated with an admitted client and that aren't empty for a discharge date
     filter(
         mrc_id %in% mrc_people$mrc_id &
             !is.na(mrc_discharge_date)
     ) %>%
     group_by(mrc_id) %>%
+    # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_date = max(mrc_discharge_date)) %>%
     full_join(mrc_people_admDate)
 ```
+
+Collect discharge destinations and join to the people table:
 
 ```{r}
 mrc_people <- mrc_discharge_dest <- all_raw %>%
@@ -126,16 +155,18 @@ mrc_people <- mrc_discharge_dest <- all_raw %>%
         mrc_id = "Record ID",
         mrc_discharge_dest = "Discharge Destination"
     ) %>%
+    # Only use records associated with an admitted client and that aren't empty for a discharge destination
     filter(
         mrc_id %in% mrc_people$mrc_id &
             !is.na(mrc_discharge_dest)
     ) %>% 
     group_by(mrc_id) %>%
+    # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
     full_join(mrc_people_admDate_dischDate)
 ```
 
-Manual corrections:
+Some clients needed manual chart review in order to fill in missing data on discharges:
 
 ```{r}
 mrc_people[60,2] = "Unknown"
@@ -156,41 +187,41 @@ mrc_people[73,2] = "Unknown"
 mrc_people[73,3] = as_date("2021-08-22")
 ```
 
-
-```{r}
-mrc_discharge_dest %>%
-    group_by(mrc_id) %>%
-    summarise(n = n()) %>%
-    filter(n > 1) %>%
-    left_join(mrc_discharge_dest)
-
-```
-
+Export to parquet file for use by python:
 
 ```{r}
 write_parquet(mrc_people, "data/mrc_people_model/mrc_people.parquet")
 ```
 
+Python takes the parquet file and uses the dedupe library to assign cluster ID's to repeat clients.
+
+Import the clustered data back into R:
 
 ```{r}
 clustered_mrc_people_raw <- read_parquet("data/mrc_people_model/clustered_mrc_people.parquet")
 ```
 
+Pre-processing for summary stats:
+
 ```{r}
 clustered_mrc_people <- clustered_mrc_people_raw %>%
     mutate(
+        # Coerce date variables into the date object class
         across(
             .cols = c(dob, mrc_admission_date, mrc_discharge_date),
             .fns = ~ ymd(.x)
         ),
+        # Capitalize name variables
         across(
             .cols = c(first_name, last_name, other_name),
             .fns = ~ str_to_title(.x)
         ),
+        # Coerce these variables into un-ordered categories
         across(
             .cols = c(sex, referral_cat, insurance_cat, mrc_discharge_dest),
             .fns = ~ as_factor(.x)
         ),
+        # Coerce these variables into booleans
         across(
             .cols = black:alcohol_disorder,
             .fns = ~ case_when(
@@ -198,7 +229,9 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 .x %in% c("unchecked", "no") ~ FALSE
             )
         ),
+        # Calculate ages of clients at their admission dates
         age = floor(dob %--% mrc_admission_date / dyears(1)),
+        # Convert ages into ordered age range categories 
         age_cat = factor(
             case_when(
                 age < 25 ~ "<25",
@@ -211,6 +244,7 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             ordered = TRUE,
             levels = c("<25", "25-34", "35-44", "45-54", "55-64", "65+")
         ),
+        # Synthesize a mental disorder variable
         mental_disorder = as_factor(
             case_when(
                 mental_condition == TRUE |
@@ -218,6 +252,7 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 hospitalized == TRUE ~ "Maybe"
             )
         ),
+        # Synthesize a substance disorder variable
         substance_disorder = as_factor(
             case_when(
                 heroin_fentanyl == TRUE |
@@ -233,7 +268,9 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                 hospitalized == TRUE ~ "Maybe"
             )
         ),
+        # Make all discharge destination strings lowercase for easier pattern matching
         mrc_discharge_dest = str_to_lower(mrc_discharge_dest),
+        # Sythesize a discharge destination category variable
         discharge_dest_cat = as_factor(
             case_when(
                 str_detect(
@@ -281,7 +318,10 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
     )
 ```
 
+Make function to generate summary tables showing counts and percentages for different people-level variables:
+
 ```{r}
+# Take source tibble and variable of interest as input
 count_and_percent <- function(tbl, var_name) {
     tbl %>%
     group_by(.data[[var_name]]) %>%
@@ -299,17 +339,25 @@ count_and_percent <- function(tbl, var_name) {
 }
 ```
 
+Identify people-level variables for which you want summary tables:
+
 ```{r}
 people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
+```
 
+Automate the generation of a summary table for every single variable of interest:
+
+```{r}
 people_summary_tables <- map(
-    people_summary_names, 
-    ~count_and_percent(clustered_mrc_people, .x)
+    .x = people_summary_names, 
+    .f = ~count_and_percent(clustered_mrc_people, .x)
 )
 ```
 
+Export data to Google Sheet:
 
 ```{r}
+## Instantiate a Google Sheet if needed
 # googlesheets4::gs4_create(
 #     name = "mrc_summary_stats",
 #     sheets = c(people_summary_names, referral_summary_names)
