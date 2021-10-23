@@ -9,14 +9,103 @@ Load needed libraries:
 
 ```{r}
 library(arrow)
-library(tidyverse)
 library(lubridate)
+library(tidyverse)
 ```
 
 Import data from RedCap:
 
 ```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
+```
+
+Calculate total months of operations:
+
+```{r}
+start_date <- as_date("2020-12-08") # From date of first communication
+date_of_export <- as_date("2021-09-30") # From time-stamp on data file
+operation_months <- start_date %--% date_of_export / dmonths(1)
+operation_months
+```
+
+To get total referrals (174), get the max number for client ID:
+
+```{r}
+max(all_raw$`Record ID`)
+```
+
+Collect referral-level data:
+
+```{r}
+referrals <- all_raw %>%
+    select(
+        record = `Record ID`, 
+        referral_source = `Referring Organization`,
+        primary_cat = `Primary Referral Category`,
+        disposition = `Disposition?` # Aka whether referral was accepted
+    ) %>%
+    # Only keep records that have data present about one of the referral variables
+    filter(
+        !is.na(referral_source) | !is.na(primary_cat) | !is.na(disposition)
+    ) %>%
+    # Coerce variables into un-ordered categories 
+    mutate(
+        referral_source = as_factor(referral_source),
+        primary_cat = as_factor(primary_cat),
+        disposition = as_factor(disposition),
+        
+    )
+```
+
+Create summary table of referral sources:
+
+```{r}
+referral_sources <- referrals %>%
+    group_by(referral_source) %>%
+    summarize(count = n()) %>%
+    mutate(
+        percent = round(
+            (count/174*100),
+            digits = 2
+        ),
+        variable = "referral_source"
+    )
+```
+
+Create table of referral disposition totals:
+
+```{r}
+dispo_cat_totals <- referrals %>%
+    group_by(
+        disposition
+    ) %>%
+    summarize(
+        dispo_cat_total = n()
+    ) 
+```
+
+Create summary table of referral category counts grouped by disposition type:
+
+```{r}
+referral_cats_by_dispo <- referrals %>%
+    group_by(
+        primary_cat,
+        disposition
+    ) %>%
+    summarize(
+        count = n()
+    ) %>%
+    full_join(
+        dispo_cat_totals
+    ) %>%
+    mutate(
+        percent = round(
+            count/dispo_cat_total*100,
+            digits = 2
+        ),
+        variable = "referral_cat_by_dispo"
+    ) %>%
+    ungroup()
 ```
 
 Create function for initial collection of people-level data:
@@ -121,7 +210,7 @@ mrc_people_admDate <- all_raw %>%
         mrc_admission_date = "MI1:Registration Date"
     ) %>%
     # Only use records associated with an admitted client
-    filter(mrc_id %in% mrc_people$mrc_id) %>%
+    filter(mrc_id %in% mrc_just_people$mrc_id) %>%
     group_by(mrc_id) %>%
     # Filter out all the NA rows
     summarize(mrc_admission_date = first(mrc_admission_date)) %>%
@@ -138,7 +227,7 @@ mrc_people_admDate_dischDate <- all_raw %>%
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge date
     filter(
-        mrc_id %in% mrc_people$mrc_id &
+        mrc_id %in% mrc_just_people$mrc_id &
             !is.na(mrc_discharge_date)
     ) %>%
     group_by(mrc_id) %>%
@@ -157,7 +246,7 @@ mrc_people <- mrc_discharge_dest <- all_raw %>%
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge destination
     filter(
-        mrc_id %in% mrc_people$mrc_id &
+        mrc_id %in% mrc_just_people$mrc_id &
             !is.na(mrc_discharge_dest)
     ) %>% 
     group_by(mrc_id) %>%
@@ -345,7 +434,7 @@ Identify people-level variables for which you want summary tables:
 people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
 ```
 
-Automate the generation of a summary table for every single variable of interest:
+Automate the generation of a summary table for every single person-level variable of interest:
 
 ```{r}
 people_summary_tables <- map(
@@ -354,18 +443,26 @@ people_summary_tables <- map(
 )
 ```
 
+Specify all the summary tables to be exported to a Google Sheet:
+
+```{r}
+all_summary_tables <- c(people_summary_tables, list(referral_sources, referral_cats_by_dispo))
+all_summary_names <- c(people_summary_names, "referral_sources", "referral_cats_by_dispo")
+```
+
+
 Export data to Google Sheet:
 
 ```{r}
 ## Instantiate a Google Sheet if needed
 # googlesheets4::gs4_create(
 #     name = "mrc_summary_stats",
-#     sheets = c(people_summary_names, referral_summary_names)
+#     sheets = c(people_summary_names, "referral_sources", "referral_cats_by_dispo")
 # )
 
 purrr::map2(
-    .x = people_summary_tables,
-    .y = people_summary_names,
+    .x = all_summary_tables,
+    .y = all_summary_names,
     .f = ~ googlesheets4::write_sheet(
         data = .x,
         ss = "https://docs.google.com/spreadsheets/d/1Set-aoj0jq4fCLemwu2tnj8rQsfOa8Ai-AIS8VK8it8/edit?usp=sharing",
