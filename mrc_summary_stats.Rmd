@@ -5,15 +5,16 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
 
-Load needed libraries:
+# Load needed libraries:
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(arrow)
 library(lubridate)
 library(tidyverse)
+library(reticulate)
 ```
 
-Import data from RedCap:
+# Import data from RedCap:
 
 ```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
@@ -32,6 +33,8 @@ To get total referrals (174), get the max number for client ID:
 
 ```{r}
 max(all_raw$`Record ID`)
+
+
 ```
 
 Collect referral-level data:
@@ -445,16 +448,8 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
             ordered = TRUE,
             levels = c("<25", "25-34", "35-44", "45-54", "55-64", "65+")
         ),
-        # Synthesize a mental disorder variable
-        mental_disorder = as_factor(
-            case_when(
-                mental_condition == TRUE |
-                    hallucinations == TRUE ~ "Yes",
-                hospitalized == TRUE ~ "Maybe"
-            )
-        ),
         # Synthesize a substance disorder variable
-        substance_disorder = as_factor(
+        substance_disorder = factor(
             case_when(
                 heroin_fentanyl == TRUE |
                     pain_pills == TRUE |
@@ -466,8 +461,19 @@ clustered_mrc_people <- clustered_mrc_people_raw %>%
                         other_drugs,
                         "crack|marijuana|cocaine|heroin"
                     ) ~ "Yes",
-                hospitalized == TRUE ~ "Maybe"
-            )
+                hospitalized == TRUE ~ "Maybe",
+                TRUE ~ "No"
+            ),
+            ordered = TRUE,
+            levels = c("No", "Maybe", "Yes")
+        ),
+        # Synthesize a mental disorder variable
+        mental_disorder = case_when(
+                mental_condition == TRUE |
+                    hallucinations == TRUE |
+                    hospitalized == TRUE |
+                    substance_disorder > "No" ~ TRUE,
+                TRUE ~ FALSE
         ),
         # Make all discharge destination strings lowercase for easier pattern matching
         mrc_discharge_dest = str_to_lower(mrc_discharge_dest),
@@ -583,4 +589,8 @@ purrr::map2(
 )
 ```
 
+```{r}
+referral_dests <- clustered_mrc_people %>% select(mrc_discharge_dest, discharge_dest_cat)
+write_csv(referral_dests, "data/discharge_destinations.csv")
+```
 
