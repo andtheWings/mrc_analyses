@@ -1,0 +1,43 @@
+---
+title: "Mortality by Cause"
+author: "Daniel P. Hall Riggins, MD"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r}
+library(lubridate)
+library(tidyverse)
+```
+
+
+```{r}
+old_mortality_data_raw <- haven::read_dta("mortality_by_cause/data/CCMEDATAtoMar2021.dta") %>%
+    mutate(
+        across(
+            .cols = 2:4,
+            .fns = ~ as_datetime(dmy(.x))
+        )
+    )
+
+new_mortality_data_raw <- readxl::read_xlsx("mortality_by_cause/data/CCME Deaths.xlsx") %>%
+    rename_with(
+        .fn = ~ str_to_lower(.x)
+    ) %>%
+    mutate(
+        incident_date = as_datetime(incident_date)
+    )
+
+mortality_data_raw <- bind_rows(old_mortality_data_raw, new_mortality_data_raw)
+```
+    
+```{r}
+
+```
+
+    
+```{r}
+rm(old_mortality_data_raw)
+rm(new_mortality_data_raw)
+```
+
