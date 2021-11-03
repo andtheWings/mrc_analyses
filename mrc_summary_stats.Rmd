@@ -26,15 +26,25 @@ Calculate total months of operations:
 start_date <- as_date("2020-12-08") # From date of first communication
 date_of_export <- as_date("2021-09-30") # From time-stamp on data file
 operation_months <- start_date %--% date_of_export / dmonths(1)
-operation_months
+print(
+    paste0(
+        "This data download represents ",
+        floor(operation_months),
+        " total months of operation."
+    )
+)
 ```
 
 To get total referrals (174), get the max number for client ID:
 
 ```{r}
-max(all_raw$`Record ID`)
-
-
+print(
+    paste0(
+        "There have been ",
+        max(all_raw$`Record ID`),
+        " total referrals."
+    )
+)
 ```
 
 Collect referral-level data:
@@ -223,7 +233,7 @@ referral_types_by_dispo <- referrals %>%
     ungroup()
 ```
 
-Create function for initial collection of people-level data:
+Create function for initial collection of encounter-level data:
 
 ```{r}
 # Function takes a source file and desired columns as input arguments
