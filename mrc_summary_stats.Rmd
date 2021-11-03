@@ -237,7 +237,7 @@ Create function for initial collection of encounter-level data:
 
 ```{r}
 # Function takes a source file and desired columns as input arguments
-collect_people_data <- function(source, columns) {
+collect_encounter_data <- function(source, columns) {
     # Print total number of records before processing
     print(
         paste0(
@@ -289,7 +289,7 @@ collect_people_data <- function(source, columns) {
 Specify desired people-level variables:
 
 ```{r}
-people_columns <- c(
+encounter_columns <- c(
     mrc_id = "Record ID", 
     last_name = "Client Last Name...55", 
     first_name = "Client First Name...56", 
@@ -320,105 +320,105 @@ people_columns <- c(
 )
 ```
 
-Run custom function defined above to collect admitted client records:
+Run custom function defined above to collect admitted encounter records:
 
 ```{r}
-mrc_just_people <- collect_people_data(all_raw, people_columns)
+mrc_just_encounters <- collect_encounter_data(source = all_raw, columns = encounter_columns)
 ```
 
-Collect registration dates and join to the people table:
+Collect registration dates and join to the encounter table:
 
 ```{r}
-mrc_people_admDate <- all_raw %>%
+mrc_encounters_admDate <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_admission_date = "MI1:Registration Date"
     ) %>%
-    # Only use records associated with an admitted client
-    filter(mrc_id %in% mrc_just_people$mrc_id) %>%
+    # Only use records associated with an encounter
+    filter(mrc_id %in% mrc_just_encounters$mrc_id) %>%
     group_by(mrc_id) %>%
     # Filter out all the NA rows
     summarize(mrc_admission_date = first(mrc_admission_date)) %>%
-    full_join(mrc_just_people)
+    full_join(mrc_just_encounters)
 ```
 
-Collect discharge dates and join to the people table:
+Collect discharge dates and join to the encounter table:
 
 ```{r}
-mrc_people_admDate_dischDate <- all_raw %>%
+mrc_encounters_admDate_dischDate <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_discharge_date = "Discharge Date"
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge date
     filter(
-        mrc_id %in% mrc_just_people$mrc_id &
+        mrc_id %in% mrc_just_encounters$mrc_id &
             !is.na(mrc_discharge_date)
     ) %>%
     group_by(mrc_id) %>%
     # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_date = max(mrc_discharge_date)) %>%
-    full_join(mrc_people_admDate)
+    full_join(mrc_encounters_admDate)
 ```
 
-Collect discharge destinations and join to the people table:
+Collect discharge destinations and join to the encounter table:
 
 ```{r}
-mrc_people <- mrc_discharge_dest <- all_raw %>%
+mrc_encounters <- mrc_discharge_dest <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_discharge_dest = "Discharge Destination"
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge destination
     filter(
-        mrc_id %in% mrc_just_people$mrc_id &
+        mrc_id %in% mrc_just_encounters$mrc_id &
             !is.na(mrc_discharge_dest)
     ) %>% 
     group_by(mrc_id) %>%
     # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
-    full_join(mrc_people_admDate_dischDate)
+    full_join(mrc_encounters_admDate_dischDate)
 ```
 
-Some clients needed manual chart review in order to fill in missing data on discharges:
+Some encounters needed manual chart review in order to fill in missing data on discharges:
 
 ```{r}
-mrc_people[60,2] = "Unknown"
-mrc_people[60,3] = as_date("2021-03-27")
-mrc_people[61,2] = "Rush Oak Park ED"
-mrc_people[61,3] = as_date("2021-03-12")
-mrc_people[62,2] = "Unknown"
-mrc_people[62,3] = as_date("2021-03-09")
-mrc_people[64,2] = "Housing Forward"
-mrc_people[64,3] = as_date("2021-04-30")
-mrc_people[67,2] = "Unknown"
-mrc_people[67,3] = as_date("2021-05-23")
-mrc_people[68,2] = "Stroger Hospital"
-mrc_people[68,3] = as_date("2021-07-03")
-mrc_people[70,2] = "Unknown"
-mrc_people[70,3] = as_date("2021-09-09")
-mrc_people[73,2] = "Unknown"
-mrc_people[73,3] = as_date("2021-08-22")
+mrc_encounters[60,2] = "Unknown"
+mrc_encounters[60,3] = as_date("2021-03-27")
+mrc_encounters[61,2] = "Rush Oak Park ED"
+mrc_encounters[61,3] = as_date("2021-03-12")
+mrc_encounters[62,2] = "Unknown"
+mrc_encounters[62,3] = as_date("2021-03-09")
+mrc_encounters[64,2] = "Housing Forward"
+mrc_encounters[64,3] = as_date("2021-04-30")
+mrc_encounters[67,2] = "Unknown"
+mrc_encounters[67,3] = as_date("2021-05-23")
+mrc_encounters[68,2] = "Stroger Hospital"
+mrc_encounters[68,3] = as_date("2021-07-03")
+mrc_encounters[70,2] = "Unknown"
+mrc_encounters[70,3] = as_date("2021-09-09")
+mrc_encounters[73,2] = "Unknown"
+mrc_encounters[73,3] = as_date("2021-08-22")
 ```
 
 Export to parquet file for use by python:
 
 ```{r}
-write_parquet(mrc_people, "data/mrc_people_model/mrc_people.parquet")
+write_parquet(mrc_encounters, "data/mrc_encounters_model/mrc_encounters.parquet")
 ```
 
-Python takes the parquet file and uses the dedupe library to assign cluster ID's to repeat clients.
+Python takes the parquet file and uses the dedupe module to assign cluster ID's to repeat clients.
 
 Import the clustered data back into R:
 
 ```{r}
-clustered_mrc_people_raw <- read_parquet("data/mrc_people_model/clustered_mrc_people.parquet")
+clustered_mrc_encounters_raw <- read_parquet("data/mrc_encounters_model/clustered_mrc_encounters.parquet")
 ```
 
 Pre-processing for summary stats:
 
 ```{r}
-clustered_mrc_people <- clustered_mrc_people_raw %>%
+clustered_mrc_encounters <- clustered_mrc_encounters_raw %>%
     mutate(
         # Coerce date variables into the date object class
         across(
@@ -567,7 +567,7 @@ Automate the generation of a summary table for every single person-level variabl
 ```{r}
 people_summary_tables <- map(
     .x = people_summary_names, 
-    .f = ~count_and_percent(clustered_mrc_people, .x)
+    .f = ~count_and_percent(clustered_mrc_encounters, .x)
 )
 ```
 
@@ -600,7 +600,7 @@ purrr::map2(
 ```
 
 ```{r}
-referral_dests <- clustered_mrc_people %>% select(mrc_discharge_dest, discharge_dest_cat)
+referral_dests <- clustered_mrc_encounters %>% select(mrc_discharge_dest, discharge_dest_cat)
 write_csv(referral_dests, "data/discharge_destinations.csv")
 ```
 
