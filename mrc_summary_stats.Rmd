@@ -378,7 +378,7 @@ mrc_encounters_admDate_dischDate <- all_raw %>%
 Collect discharge destinations and join to the encounter table:
 
 ```{r}
-mrc_encounters <- mrc_discharge_dest <- all_raw %>%
+mrc_encounters <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_discharge_dest = "Discharge Destination"
@@ -391,28 +391,36 @@ mrc_encounters <- mrc_discharge_dest <- all_raw %>%
     group_by(mrc_id) %>%
     # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
-    full_join(mrc_encounters_admDate_dischDate)
+    full_join(mrc_encounters_admDate_dischDate) %>%
+    mutate(
+        # Coerce date variables into strings for easy interoperability with python
+        across(
+            .cols = c(dob, mrc_admission_date, mrc_discharge_date),
+            .fns = ~ as.character(.x)
+        )
+    )
+    
 ```
 
 Some encounters needed manual chart review in order to fill in missing data on discharges:
 
 ```{r}
 mrc_encounters[60,2] = "Unknown"
-mrc_encounters[60,3] = as_date("2021-03-27")
+mrc_encounters[60,3] = "2021-03-27"
 mrc_encounters[61,2] = "Rush Oak Park ED"
-mrc_encounters[61,3] = as_date("2021-03-12")
+mrc_encounters[61,3] = "2021-03-12"
 mrc_encounters[62,2] = "Unknown"
-mrc_encounters[62,3] = as_date("2021-03-09")
+mrc_encounters[62,3] = "2021-03-09"
 mrc_encounters[64,2] = "Housing Forward"
-mrc_encounters[64,3] = as_date("2021-04-30")
+mrc_encounters[64,3] = "2021-04-30"
 mrc_encounters[67,2] = "Unknown"
-mrc_encounters[67,3] = as_date("2021-05-23")
+mrc_encounters[67,3] = "2021-05-23"
 mrc_encounters[68,2] = "Stroger Hospital"
-mrc_encounters[68,3] = as_date("2021-07-03")
+mrc_encounters[68,3] = "2021-07-03"
 mrc_encounters[70,2] = "Unknown"
-mrc_encounters[70,3] = as_date("2021-09-09")
+mrc_encounters[70,3] = "2021-09-09"
 mrc_encounters[73,2] = "Unknown"
-mrc_encounters[73,3] = as_date("2021-08-22")
+mrc_encounters[73,3] = "2021-08-22"
 ```
 
 ```{python}
