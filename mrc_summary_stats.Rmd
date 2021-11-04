@@ -18,10 +18,12 @@ Sys.unsetenv("RETICULATE_PYTHON")
 library(reticulate)
 #install_miniconda()
 #conda_create("r_mrc_analyses")
-use_miniconda(condaenv = "r_mrc_analyses", required = TRUE)
+use_condaenv(condaenv = "mrc_analyses", conda = "/home/riggins/miniconda3/bin/conda")
 py_config()
+conda_install(envname = "r_mrc_analyses", packages = "pyarrow")
 #py_install(packages = "pandas-dedupe", pip = TRUE)
 ```
+
 ```{python}
 import pandas as pd
 import pandas_dedupe as dd
@@ -423,9 +425,28 @@ mrc_encounters[73,2] = "Unknown"
 mrc_encounters[73,3] = "2021-08-22"
 ```
 
-```{python}
-print(r.mrc_encounters.head())
+```{r}
+write_parquet(mrc_encounters, "data/mrc_people_model/mrc_encounters.parquet")
 ```
+
+
+```{python}
+os.chdir('/home/riggins/mrc_analyses/data/mrc_people_model')
+
+mrc_encounters = pd.read_parquet("mrc_encounters.parquet")
+
+mrc_clustered_people = dd.dedupe_dataframe(
+        mrc_encounters,
+        ['last_name', 'first_name', 'dob']
+)
+
+mrc_clustered_people.to_parquet('mrc_clustered_people.parquet')
+```
+
+```{r}
+mrc_clustered_people <- py$mrc_clustered_people
+```
+
 
 Pre-processing for summary stats:
 
