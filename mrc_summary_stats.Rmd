@@ -11,7 +11,21 @@ output: html_document
 library(arrow)
 library(lubridate)
 library(tidyverse)
+```
+
+```{r}
+Sys.unsetenv("RETICULATE_PYTHON")
 library(reticulate)
+#install_miniconda()
+#conda_create("r_mrc_analyses")
+use_miniconda(condaenv = "r_mrc_analyses", required = TRUE)
+py_config()
+#py_install(packages = "pandas-dedupe", pip = TRUE)
+```
+```{python}
+import pandas as pd
+import pandas_dedupe as dd
+import os
 ```
 
 # Import data from RedCap:
@@ -401,18 +415,8 @@ mrc_encounters[73,2] = "Unknown"
 mrc_encounters[73,3] = as_date("2021-08-22")
 ```
 
-Export to parquet file for use by python:
-
-```{r}
-write_parquet(mrc_encounters, "data/mrc_encounters_model/mrc_encounters.parquet")
-```
-
-Python takes the parquet file and uses the dedupe module to assign cluster ID's to repeat clients.
-
-Import the clustered data back into R:
-
-```{r}
-clustered_mrc_encounters_raw <- read_parquet("data/mrc_encounters_model/clustered_mrc_encounters.parquet")
+```{python}
+print(r.mrc_encounters.head())
 ```
 
 Pre-processing for summary stats:
