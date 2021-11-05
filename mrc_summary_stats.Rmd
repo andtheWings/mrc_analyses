@@ -13,23 +13,6 @@ library(lubridate)
 library(tidyverse)
 ```
 
-```{r}
-Sys.unsetenv("RETICULATE_PYTHON")
-library(reticulate)
-#install_miniconda()
-#conda_create("r_mrc_analyses")
-use_condaenv(condaenv = "mrc_analyses", conda = "/home/riggins/miniconda3/bin/conda")
-py_config()
-conda_install(envname = "r_mrc_analyses", packages = "pyarrow")
-#py_install(packages = "pandas-dedupe", pip = TRUE)
-```
-
-```{python}
-import pandas as pd
-import pandas_dedupe as dd
-import os
-```
-
 # Import data from RedCap:
 
 ```{r}
@@ -339,61 +322,61 @@ encounter_columns <- c(
 Run custom function defined above to collect admitted encounter records:
 
 ```{r}
-mrc_just_encounters <- collect_encounter_data(source = all_raw, columns = encounter_columns)
+just_encounters <- collect_encounter_data(source = all_raw, columns = encounter_columns)
 ```
 
 Collect registration dates and join to the encounter table:
 
 ```{r}
-mrc_encounters_admDate <- all_raw %>%
+encounters_admDate <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_admission_date = "MI1:Registration Date"
     ) %>%
     # Only use records associated with an encounter
-    filter(mrc_id %in% mrc_just_encounters$mrc_id) %>%
+    filter(mrc_id %in% just_encounters$mrc_id) %>%
     group_by(mrc_id) %>%
     # Filter out all the NA rows
     summarize(mrc_admission_date = first(mrc_admission_date)) %>%
-    full_join(mrc_just_encounters)
+    full_join(just_encounters)
 ```
 
 Collect discharge dates and join to the encounter table:
 
 ```{r}
-mrc_encounters_admDate_dischDate <- all_raw %>%
+encounters_admDate_dischDate <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_discharge_date = "Discharge Date"
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge date
     filter(
-        mrc_id %in% mrc_just_encounters$mrc_id &
+        mrc_id %in% just_encounters$mrc_id &
             !is.na(mrc_discharge_date)
     ) %>%
     group_by(mrc_id) %>%
     # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_date = max(mrc_discharge_date)) %>%
-    full_join(mrc_encounters_admDate)
+    full_join(encounters_admDate)
 ```
 
 Collect discharge destinations and join to the encounter table:
 
 ```{r}
-mrc_encounters <- all_raw %>%
+encounters <- all_raw %>%
     select(
         mrc_id = "Record ID",
         mrc_discharge_dest = "Discharge Destination"
     ) %>%
     # Only use records associated with an admitted client and that aren't empty for a discharge destination
     filter(
-        mrc_id %in% mrc_just_encounters$mrc_id &
+        mrc_id %in% just_encounters$mrc_id &
             !is.na(mrc_discharge_dest)
     ) %>% 
     group_by(mrc_id) %>%
     # Some clients had multiple records for one discharge, so merge those together
     summarize(mrc_discharge_dest = first(mrc_discharge_dest)) %>%
-    full_join(mrc_encounters_admDate_dischDate) %>%
+    full_join(encounters_admDate_dischDate) %>%
     mutate(
         # Coerce date variables into strings for easy interoperability with python
         across(
@@ -407,51 +390,38 @@ mrc_encounters <- all_raw %>%
 Some encounters needed manual chart review in order to fill in missing data on discharges:
 
 ```{r}
-mrc_encounters[60,2] = "Unknown"
-mrc_encounters[60,3] = "2021-03-27"
-mrc_encounters[61,2] = "Rush Oak Park ED"
-mrc_encounters[61,3] = "2021-03-12"
-mrc_encounters[62,2] = "Unknown"
-mrc_encounters[62,3] = "2021-03-09"
-mrc_encounters[64,2] = "Housing Forward"
-mrc_encounters[64,3] = "2021-04-30"
-mrc_encounters[67,2] = "Unknown"
-mrc_encounters[67,3] = "2021-05-23"
-mrc_encounters[68,2] = "Stroger Hospital"
-mrc_encounters[68,3] = "2021-07-03"
-mrc_encounters[70,2] = "Unknown"
-mrc_encounters[70,3] = "2021-09-09"
-mrc_encounters[73,2] = "Unknown"
-mrc_encounters[73,3] = "2021-08-22"
+encounters[60,2] = "Unknown"
+encounters[60,3] = "2021-03-27"
+encounters[61,2] = "Rush Oak Park ED"
+encounters[61,3] = "2021-03-12"
+encounters[62,2] = "Unknown"
+encounters[62,3] = "2021-03-09"
+encounters[64,2] = "Housing Forward"
+encounters[64,3] = "2021-04-30"
+encounters[67,2] = "Unknown"
+encounters[67,3] = "2021-05-23"
+encounters[68,2] = "Stroger Hospital"
+encounters[68,3] = "2021-07-03"
+encounters[70,2] = "Unknown"
+encounters[70,3] = "2021-09-09"
+encounters[73,2] = "Unknown"
+encounters[73,3] = "2021-08-22"
 ```
 
 ```{r}
-write_parquet(mrc_encounters, "data/mrc_people_model/mrc_encounters.parquet")
+write_parquet(encounters, "data/mrc_people_model/encounters.parquet")
 ```
 
-
-```{python}
-os.chdir('/home/riggins/mrc_analyses/data/mrc_people_model')
-
-mrc_encounters = pd.read_parquet("mrc_encounters.parquet")
-
-mrc_clustered_people = dd.dedupe_dataframe(
-        mrc_encounters,
-        ['last_name', 'first_name', 'dob']
-)
-
-mrc_clustered_people.to_parquet('mrc_clustered_people.parquet')
-```
 
 ```{r}
-mrc_clustered_people <- py$mrc_clustered_people
+clustered_people <- read_parquet("data/mrc_people_model/clustered_people.parquet")
 ```
 
 
 Pre-processing for summary stats:
 
 ```{r}
-clustered_mrc_encounters <- clustered_mrc_encounters_raw %>%
+clustered_encounters <- clustered_encounters_raw %>%
     mutate(
         # Coerce date variables into the date object class
         across(
@@ -465,7 +435,7 @@ clustered_mrc_encounters <- clustered_mrc_encounters_raw %>%
         ),
         # Coerce these variables into un-ordered categories
         across(
-            .cols = c(sex, referral_cat, insurance_cat, mrc_discharge_dest),
+            .cols = c(sex, referral_cat, mrc_discharge_dest),
             .fns = ~ as_factor(.x)
         ),
         # Coerce these variables into booleans
@@ -474,6 +444,60 @@ clustered_mrc_encounters <- clustered_mrc_encounters_raw %>%
             .fns = ~ case_when(
                 .x %in% c("checked", "yes") ~ TRUE,
                 .x %in% c("unchecked", "no") ~ FALSE
+            )
+        ),
+        # Consolidate insurance categories
+        insurance_cat = as_factor(
+            case_when(
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "countycare|county care"
+                ) ~ "CountyCare Health Plan, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "meridian"
+                ) ~ "Meridian, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "illinicare"
+                ) ~ "Aetna Better Health of Illinois, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "blue cross community|bcbs medicaid"
+                ) ~ "Blue Cross Community Health Plans, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "omaha"
+                ) ~ "Mutual of Omaha, Medicare Supplement",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "united"
+                ) ~ "United Healthcare, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "wellcare"
+                ) ~ "WellCare Health Plans, Medicare Advantage",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "molina"
+                ) ~ "Molina Healthcare of Illinois, Medicaid",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "aetna"
+                ) ~ "Aetna, Unspecified",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "medicare"
+                ) ~ "Medicare, Unspecified",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "medicaid"
+                ) ~ "Medicaid, Unspecified",
+                str_detect(
+                    string = insurance_cat,
+                    pattern = "blue cross|bcbs"
+                ) ~ "Blue Cross Blue Shield, Unspecified",
+                TRUE ~ "Other"
             )
         ),
         # Calculate ages of clients at their admission dates
@@ -600,7 +624,7 @@ Automate the generation of a summary table for every single person-level variabl
 ```{r}
 people_summary_tables <- map(
     .x = people_summary_names, 
-    .f = ~count_and_percent(clustered_mrc_encounters, .x)
+    .f = ~count_and_percent(clustered_encounters, .x)
 )
 ```
 
@@ -633,7 +657,7 @@ purrr::map2(
 ```
 
 ```{r}
-referral_dests <- clustered_mrc_encounters %>% select(mrc_discharge_dest, discharge_dest_cat)
+referral_dests <- clustered_encounters %>% select(mrc_discharge_dest, discharge_dest_cat)
 write_csv(referral_dests, "data/discharge_destinations.csv")
 ```
 
