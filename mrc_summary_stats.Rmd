@@ -11,6 +11,7 @@ output: html_document
 library(arrow)
 library(lubridate)
 library(tidyverse)
+library(xlsx)
 ```
 
 # Import data from RedCap:
@@ -285,7 +286,7 @@ collect_encounter_data <- function(source, columns) {
 }
 ```
 
-Specify desired people-level variables:
+Specify desired encounter-level variables:
 
 ```{r}
 encounter_columns <- c(
@@ -406,6 +407,7 @@ encounters[70,2] = "Unknown"
 encounters[70,3] = "2021-09-09"
 encounters[73,2] = "Unknown"
 encounters[73,3] = "2021-08-22"
+encounters[79,9] = "Male"
 ```
 
 ```{r}
@@ -414,11 +416,11 @@ write_parquet(encounters, "data/mrc_people_model/encounters.parquet")
 
 
 ```{r}
-clustered_people <- read_parquet("data/mrc_people_model/clustered_people.parquet")
+clustered_encounters_raw <- read_parquet("data/mrc_people_model/clustered_people.parquet")
 ```
 
 
-Pre-processing for summary stats:
+Pre-processing for encounter/people-level summary stats:
 
 ```{r}
 clustered_encounters <- clustered_encounters_raw %>%
@@ -592,6 +594,19 @@ clustered_encounters <- clustered_encounters_raw %>%
     )
 ```
 
+Consolidate the clustered people records
+
+```{r}
+people <- clustered_encounters %>%
+    group_by(`cluster id`) %>%
+    summarise(
+        across(
+            .cols = c(sex:hispanic, age_cat:mental_disorder),
+            .fns = ~ first(.x)
+        )
+    )
+```
+
 Make function to generate summary tables showing counts and percentages for different people-level variables:
 
 ```{r}
@@ -613,26 +628,37 @@ count_and_percent <- function(tbl, var_name) {
 }
 ```
 
+Identify encounter-level variables for which you want summary tables:
+
+```{r}
+encounter_summary_names <- c("referral_cat", "insurance_cat", "discharge_dest_cat", "age_cat")
+```
+
 Identify people-level variables for which you want summary tables:
 
 ```{r}
-people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "referral_cat", "insurance_cat", "age_cat", "mental_disorder", "substance_disorder", "discharge_dest_cat")
+people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "mental_disorder", "substance_disorder")
 ```
 
-Automate the generation of a summary table for every single person-level variable of interest:
+Automate the generation of a summary table for every single encounter or person-level variable of interest:
 
 ```{r}
+encounter_summary_tables <- map(
+    .x = encounter_summary_names, 
+    .f = ~count_and_percent(clustered_encounters, .x)
+)
+
 people_summary_tables <- map(
     .x = people_summary_names, 
-    .f = ~count_and_percent(clustered_encounters, .x)
+    .f = ~count_and_percent(people, .x)
 )
 ```
 
 Specify all the summary tables to be exported to a Google Sheet:
 
 ```{r}
-all_summary_tables <- c(people_summary_tables, list(referral_sources, referral_cats_by_dispo))
-all_summary_names <- c(people_summary_names, "referral_sources", "referral_cats_by_dispo")
+all_summary_tables <- c(encounter_summary_tables, people_summary_tables, list(referral_sources, referral_types_by_dispo))
+all_summary_names <- c(encounter_summary_names, people_summary_names, "referral_sources", "referral_types_by_dispo")
 ```
 
 
@@ -655,9 +681,18 @@ purrr::map2(
     )
 )
 ```
+Export raw data to Excel Doc:
 
 ```{r}
-referral_dests <- clustered_encounters %>% select(mrc_discharge_dest, discharge_dest_cat)
-write_csv(referral_dests, "data/discharge_destinations.csv")
+purrr::map2(
+    .x = list(referrals, clustered_encounters, people),
+    .y = c("referrals", "clustered_encounters", "people"),
+    .f = ~ write.xlsx(
+        x = .x,
+        file = paste0("data/cleaned_mrc_data_",Sys.Date(),".xlsx"),
+        sheetName = .y,
+        append = TRUE
+    )
+)
 ```
 
