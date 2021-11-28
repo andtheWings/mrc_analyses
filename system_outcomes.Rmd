@@ -1,0 +1,159 @@
+---
+title: "Healthcare System Outcomes"
+author: "Daniel P. Riggins, MD"
+date: "11/18/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(arrow)
+```
+
+```{r}
+raw_encounters <- read_csv("data/CCH Encounters.csv")
+
+glimpse(raw_encounters)
+```
+```{r}
+unclustered_encounters <- 
+    raw_encounters %>%
+    distinct() %>%
+    mutate(
+        name = paste0(NAME_FIRST, " ", NAME_LAST),
+        dob = str_replace_all(BIRTH_DT_TM, "/", "-")
+    )
+```
+
+```{r}
+write_parquet(unclustered_encounters, "data/mrc_people_model/unclustered_CCH_encounters.parquet")
+```
+
+```{r}
+clustered_encounters <- 
+    read_parquet("data/mrc_people_model/clustered_CCH_encounters.parquet") %>%
+    rename(cluster_id = `cluster id`) %>%
+    mutate(
+        across(
+            .cols = c(FIN_NUM, FACILITY_MRN, CMRN_ID, PERSON_ID, ENCNTR_ID),
+            .fns = ~round(as.numeric(.x))
+        ),
+        across(
+            .cols = c(NAME_LAST, NAME_FIRST, NAME_MIDDLE, RACE, ETHNICITY, SEX, INSURANCE, LOC_FACILITY_CD, LOC_BUILDING_CD, LOC_NURSE_UNIT_CD),
+            .fns = ~na_if(.x, "null")
+        ),
+        across(
+            .cols = c(NAME_LAST, NAME_FIRST, NAME_MIDDLE),
+            .fns = ~str_to_title(.x)
+        )
+    ) %>%
+    view()
+
+toy_clustered_encounters <- head(clustered_encounters)
+    
+toy <- toy_clustered_encounters %>%
+    select(cluster_id, FIN_NUM) %>%
+    rowwise() %>%
+    mutate(
+        type_FIN = paste0("_:",as.character(FIN_NUM),' <dgraph.type> "FIN" .'),
+        type_cluster = paste0("_:",as.character(cluster_id),' <dgraph.type> "Person" .')
+    ) %>%
+    pivot_longer(
+        cols = c(type_FIN, type_cluster)
+    ) %>%
+    select(value)
+
+
+
+```
+
+
+```{r}
+possible_clusters <- 
+    clustered_encounters %>%
+    group_by(cluster_id) %>%
+    summarise(n = n()) %>%
+    filter(n>1)
+
+detect_diffs <- function(tbl, clustering_var, var_of_interest) {
+    tbl %>%
+    group_by({{clustering_var}}, {{var_of_interest}}) %>%
+    summarise(n = n()) %>%
+    filter(n<2)
+}
+    
+diff_dobs <- detect_diffs(clustered_encounters, cluster_id, dob)
+diff_person_ids <- detect_diffs(clustered_encounters, cluster_id, PERSON_ID)
+diff_mrns <- detect_diffs(clustered_encounters, cluster_id, FACILITY_MRN)
+diff_cmrns <- detect_diffs(clustered_encounters, cluster_id, CMRN_ID)
+    
+
+all_diff <- 
+    clustered_encounters %>%
+    filter(cluster_id %in% diff_dobs$cluster_id &
+        cluster_id %in% diff_person_ids$cluster_id &
+        cluster_id %in% diff_mrns$cluster_id &
+        cluster_id %in% diff_cmrns$cluster_id &
+        cluster_id %in% possible_clusters$cluster_id
+    )
+
+clustered_encounters[1, "cluster_id"]
+```
+
+
+```{r}
+clustered_encounters %>%
+    group_by(`cluster id`) %>%
+    summarise(
+        across(
+            .cols = c(first_name, last_name, dob),
+            .fns = ~ list(unique(.x))
+        )
+    ) %>%
+    view()
+
+clustered_encounters$first_name <- 
+
+    
+    group_by(FIN_NUM) %>%
+    summarise(
+        across(
+            .cols = -CMRN_ID,
+            .fns = ~ first(.x)
+        ),
+        cmrns = list(CMRN_ID),
+    ) %>%
+
+mutate(
+        dob = mdy(BIRTH_DT_TM),
+        DSCH_DT_TM = ymd_hms(DSCH_DT_TM),
+        length_of_encounter = round(
+            REG_DT_TM %--% DSCH_DT_TM / ddays(1),
+            digits = 2
+        )
+    )
+```
+
+
+```{r}
+unclustered_people <-
+    encounters %>%
+    group_by(cmrns) %>%
+    summarise(
+        num_encounters = n(),
+        avg_length_of_encounter = round(
+            mean(length_of_encounter),
+            digits = 2
+        ),
+        sd_length_of_encounter = round(
+            sd(length_of_encounter),
+            digits = 2
+        ),
+        PERSON_ID = list(PERSON_ID)
+    )
+
+
+```
+
+
