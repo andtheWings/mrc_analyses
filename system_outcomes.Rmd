@@ -49,23 +49,6 @@ clustered_encounters <-
         )
     ) %>%
     view()
-
-toy_clustered_encounters <- head(clustered_encounters)
-    
-toy <- toy_clustered_encounters %>%
-    select(cluster_id, FIN_NUM) %>%
-    rowwise() %>%
-    mutate(
-        type_FIN = paste0("_:",as.character(FIN_NUM),' <dgraph.type> "FIN" .'),
-        type_cluster = paste0("_:",as.character(cluster_id),' <dgraph.type> "Person" .')
-    ) %>%
-    pivot_longer(
-        cols = c(type_FIN, type_cluster)
-    ) %>%
-    select(value)
-
-
-
 ```
 
 
