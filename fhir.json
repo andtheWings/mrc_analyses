@@ -1,0 +1,158 @@
+[
+    {
+      "@base": "terminusdb:///data/",
+      "@schema": "terminusdb:///schema#",
+      "@type": "@context"
+    },
+    {
+      "@documentation": {
+        "@comment": "Details and position information for a physical place where services are provided and resources and participants may be stored, found, contained, or accommodated.",
+        "@properties": {
+          "alias": "A list of alternate names that the location is known as, or was known as, in the past",
+          "description": "Additional details about the location that could be displayed as further information to identify the location beyond its name",
+          "name": "Name of the location as used by humans",
+          "period": "Time period when address was/is in use."
+        }
+      },
+      "@id": "Location",
+      "@key": {
+        "@type": "Random"
+      },
+      "@type": "Class",
+      "alias": {
+        "@class": "xsd:string",
+        "@type": "List"
+      },
+      "description": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "name": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "period": {
+        "@class": "xsd:duration",
+        "@type": "Optional"
+      },
+      "status": {
+        "@class": "locationStatus",
+        "@type": "Optional"
+      }
+    },
+    {
+      "@id": "AddressUse",
+      "@type": "Enum",
+      "@value": [
+        "BILLING",
+        "HOME",
+        "OLD",
+        "TEMP",
+        "WORK"
+      ]
+    },
+    {
+      "@documentation": {
+        "@comment": "Mailing addresses - PO Boxes and care-of addresses."
+      },
+      "@id": "postalAddress",
+      "@inherits": "Address",
+      "@key": {
+        "@type": "Random"
+      },
+      "@type": "Class"
+    },
+    {
+      "@id": "locationStatus",
+      "@type": "Enum",
+      "@value": [
+        "active",
+        "suspended",
+        "inactive"
+      ]
+    },
+    {
+      "@documentation": {
+        "@comment": "A physical address that can be visited."
+      },
+      "@id": "physicalAddress",
+      "@inherits": "Address",
+      "@key": {
+        "@type": "Random"
+      },
+      "@type": "Class"
+    },
+    {
+      "@documentation": {
+        "@comment": "An address that is both physical and postal."
+      },
+      "@id": "bothAdress",
+      "@inherits": "Address",
+      "@key": {
+        "@type": "Random"
+      },
+      "@type": "Class"
+    },
+    {
+      "@documentation": {
+        "@comment": "An address expressed using postal conventions (as opposed to GPS or other location definition formats). This data type may be used to convey addresses for use in delivering mail as well as for visiting locations which might not be valid for mail delivery. There are a variety of postal address formats defined around the world.",
+        "@properties": {
+          "district": "The name of the administrative area (county).",
+          "line": "This component contains the house number, apartment number, street name, street direction, P.O.",
+          "postalCode": "A postal code designating a region defined by the postal service.",
+          "state": "Sub-unit of a country with limited sovereignty in a federally organized country.",
+          "text": "Specifies the entire address as it should be displayed",
+          "use": "The purpose of this address."
+        }
+      },
+      "@id": "Address",
+      "@key": {
+        "@type": "Random"
+      },
+      "@type": "Class",
+      "city": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "country": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "district": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "line": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "period": {
+        "@class": "xsd:duration",
+        "@type": "Optional"
+      },
+      "postalCode": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "state": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "text": {
+        "@class": "xsd:string",
+        "@type": "Optional"
+      },
+      "use": {
+        "@class": false,
+        "@type": "Optional"
+      }
+    },
+    {
+      "@id": "mode",
+      "@type": "Enum",
+      "@value": [
+        "instance",
+        "kind"
+      ]
+    }
+  ]
