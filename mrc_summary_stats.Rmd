@@ -388,7 +388,8 @@ encounters <- all_raw %>%
         across(
             .cols = c(dob, mrc_admission_date, mrc_discharge_date),
             .fns = ~ as.character(.x)
-        )
+        ),
+        name = paste0(first_name, " ", last_name)
     )
     
 ```
@@ -422,9 +423,8 @@ write_parquet(encounters, "data/mrc_people_model/unclustered_MRC_encounters.parq
 # Clustered Encounter-Level Data
 
 ```{r}
-clustered_encounters_raw <- read_parquet("data/mrc_people_model/clustered_MRCC_encounters.parquet")
+clustered_encounters_raw <- read_parquet("data/mrc_people_model/clustered_MRC_encounters.parquet")
 ```
-
 
 Pre-processing for encounter/people-level summary stats:
 
@@ -615,9 +615,10 @@ people <- clustered_encounters %>%
 
 
 ```{r}
-write_parquet(people, "data/mrc_people_gazette.parquet")
+write_parquet(people, "data/mrc_people.parquet")
 ```
 
+# Person and Encounter-Level Summary Stats
 
 Make function to generate summary tables showing counts and percentages for different people-level variables:
 
@@ -673,6 +674,7 @@ all_summary_tables <- c(encounter_summary_tables, people_summary_tables, list(re
 all_summary_names <- c(encounter_summary_names, people_summary_names, "referral_sources", "referral_types_by_dispo")
 ```
 
+# Export
 
 Export data to Google Sheet:
 
