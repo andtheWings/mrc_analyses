@@ -21,7 +21,6 @@ unclustered_encounters <-
     raw_encounters %>%
     distinct() %>%
     mutate(
-        name = paste0(NAME_FIRST, " ", NAME_LAST),
         dob = str_replace_all(BIRTH_DT_TM, "/", "-")
     )
 ```
@@ -31,46 +30,79 @@ write_parquet(unclustered_encounters, "data/mrc_people_model/unclustered_CCH_enc
 ```
 
 ```{r}
-clustered_encounters <- 
-    read_parquet("data/mrc_people_model/clustered_CCH_encounters.parquet") %>%
-    rename(cluster_id = `cluster id`) %>%
+CCH_ENCOUNTERS <- 
+    read_parquet("data/mrc_people_gazette/clustered_CCH_encounters.parquet") %>%
+    rename(MRC_CLUSTER_ID = `cluster id`) %>%
     mutate(
         across(
             .cols = c(FIN_NUM, FACILITY_MRN, CMRN_ID, PERSON_ID, ENCNTR_ID),
             .fns = ~round(as.numeric(.x))
         ),
         across(
-            .cols = c(NAME_LAST, NAME_FIRST, NAME_MIDDLE, RACE, ETHNICITY, SEX, INSURANCE, LOC_FACILITY_CD, LOC_BUILDING_CD, LOC_NURSE_UNIT_CD),
-            .fns = ~na_if(.x, "null")
-        ),
-        across(
             .cols = c(NAME_LAST, NAME_FIRST, NAME_MIDDLE),
             .fns = ~str_to_title(.x)
-        )
+        ),
+        NAME_MIDDLE = na_if(NAME_MIDDLE, "Null"),
+        BIRTH_DATE = mdy(BIRTH_DT_TM),
+        ADMIT_DATE = ymd_hms(REG_DT_TM),
+        DISCHARGE_DATE = ymd_hms(DSCH_DT_TM),
+        ENCOUNTER_LENGTH = round(
+            REG_DT_TM %--% DSCH_DT_TM / ddays(1),
+            digits = 2
+        ),
+        MRC_PATIENT = if_else(!is.na(MRC_CLUSTER_ID), TRUE, FALSE)
     ) %>%
     view()
 ```
 
-
 ```{r}
+CCH_ENCOUNTERS %>%
+    group_by(MRC_PATIENT) %>%
+    summarise(
+        median_length_of_encounter = round(
+            median(ENCOUNTER_LENGTH, na.rm = TRUE),
+            digits = 2
+        ),
+        mean_length_of_encounter = round(
+            mean(ENCOUNTER_LENGTH, na.rm = TRUE),
+            digits = 2
+        ),
+        sd_length_of_encounter = round(
+            sd(ENCOUNTER_LENGTH, na.rm = TRUE),
+            digits = 2
+        )
+    )
+```
+
+
+
+
+```{r quality checks for duplicates}
 possible_clusters <- 
     clustered_encounters %>%
     group_by(cluster_id) %>%
     summarise(n = n()) %>%
     filter(n>1)
 
-detect_diffs <- function(tbl, clustering_var, var_of_interest) {
+detect_diffs <- function(tbl, subject_var, object_var) {
     tbl %>%
-    group_by({{clustering_var}}, {{var_of_interest}}) %>%
-    summarise(n = n()) %>%
-    filter(n<2)
+    group_by({{subject_var}}, {{object_var}}) %>%
+    summarise(combo_count = n()) %>%
+    ungroup() %>%
+    group_by({{subject_var}}) %>%
+    summarise(
+        subject_count = n(),
+        object_ids = list({{object_var}}))
 }
     
-diff_dobs <- detect_diffs(clustered_encounters, cluster_id, dob)
-diff_person_ids <- detect_diffs(clustered_encounters, cluster_id, PERSON_ID)
-diff_mrns <- detect_diffs(clustered_encounters, cluster_id, FACILITY_MRN)
-diff_cmrns <- detect_diffs(clustered_encounters, cluster_id, CMRN_ID)
-    
+person_w_diff_dobs <- detect_diffs(clustered_encounters, cluster_id, dob)
+person_w_diff_person_ids <- detect_diffs(clustered_encounters, cluster_id, PERSON_ID)
+person_w_diff_mrns <- detect_diffs(clustered_encounters, cluster_id, FACILITY_MRN)
+person_w_diff_cmrns <- detect_diffs(clustered_encounters, cluster_id, CMRN_ID)
+
+person_id_w_diff_people <- detect_diffs(clustered_encounters, PERSON_ID, cluster_id)
+mrn_w_diff_people <- detect_diffs(clustered_encounters, FACILITY_MRN, cluster_id)
+cmrn_w_diff_people <- detect_diffs(clustered_encounters, CMRN_ID, cluster_id)
 
 all_diff <- 
     clustered_encounters %>%
@@ -85,38 +117,7 @@ clustered_encounters[1, "cluster_id"]
 ```
 
 
-```{r}
-clustered_encounters %>%
-    group_by(`cluster id`) %>%
-    summarise(
-        across(
-            .cols = c(first_name, last_name, dob),
-            .fns = ~ list(unique(.x))
-        )
-    ) %>%
-    view()
 
-clustered_encounters$first_name <- 
-
-    
-    group_by(FIN_NUM) %>%
-    summarise(
-        across(
-            .cols = -CMRN_ID,
-            .fns = ~ first(.x)
-        ),
-        cmrns = list(CMRN_ID),
-    ) %>%
-
-mutate(
-        dob = mdy(BIRTH_DT_TM),
-        DSCH_DT_TM = ymd_hms(DSCH_DT_TM),
-        length_of_encounter = round(
-            REG_DT_TM %--% DSCH_DT_TM / ddays(1),
-            digits = 2
-        )
-    )
-```
 
 
 ```{r}
