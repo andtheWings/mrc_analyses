@@ -19,6 +19,7 @@ library(xlsx)
 ```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
 ```
+# MRC-Level Data
 
 Calculate total months of operations:
 
@@ -46,6 +47,7 @@ print(
     )
 )
 ```
+# Referral-Level Data
 
 Collect referral-level data:
 
@@ -182,6 +184,8 @@ referrals <- all_raw %>%
     ) 
 ```
 
+# Referral-Level Summary Stats
+
 Create summary table of referral sources:
 
 ```{r}
@@ -209,7 +213,7 @@ dispo_cat_totals <- referrals %>%
     ) 
 ```
 
-Create summary table of referral category counts grouped by disposition type:
+Create table of referral category counts grouped by disposition type:
 
 ```{r}
 referral_types_by_dispo <- referrals %>%
@@ -232,6 +236,7 @@ referral_types_by_dispo <- referrals %>%
     ) %>%
     ungroup()
 ```
+# Unclustered Encounter-Level Data
 
 Create function for initial collection of encounter-level data:
 
@@ -411,12 +416,13 @@ encounters[79,9] = "Male"
 ```
 
 ```{r}
-write_parquet(encounters, "data/mrc_people_model/encounters.parquet")
+write_parquet(encounters, "data/mrc_people_model/unclustered_MRC_encounters.parquet")
 ```
 
+# Clustered Encounter-Level Data
 
 ```{r}
-clustered_encounters_raw <- read_parquet("data/mrc_people_model/clustered_people.parquet")
+clustered_encounters_raw <- read_parquet("data/mrc_people_model/clustered_MRCC_encounters.parquet")
 ```
 
 
@@ -606,6 +612,12 @@ people <- clustered_encounters %>%
         )
     )
 ```
+
+
+```{r}
+write_parquet(people, "data/mrc_people_gazette.parquet")
+```
+
 
 Make function to generate summary tables showing counts and percentages for different people-level variables:
 
