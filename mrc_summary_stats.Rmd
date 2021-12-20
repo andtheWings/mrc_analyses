@@ -584,14 +584,9 @@ clustered_encounters <- clustered_encounters_raw %>%
             ) ~ "Absconded/Without Plan",
             str_detect(
                 mrc_discharge_dest,
-                    mrc_discharge_dest,
-                    "home"
-                ) ~ "Unclear",
-                str_detect(
-                    mrc_discharge_dest,
-                    "unknown"
-                ) ~ "Unknown"
-            )
+                "home|unknown"
+            ) ~ "Unknown",
+            TRUE ~ "Not Yet Discharged"
         )
     )
 ```
