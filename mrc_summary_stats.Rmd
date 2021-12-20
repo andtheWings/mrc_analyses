@@ -397,23 +397,7 @@ encounters <- all_raw %>%
 Some encounters needed manual chart review in order to fill in missing data on discharges:
 
 ```{r}
-encounters[60,2] = "Unknown"
-encounters[60,3] = "2021-03-27"
-encounters[61,2] = "Rush Oak Park ED"
-encounters[61,3] = "2021-03-12"
-encounters[62,2] = "Unknown"
-encounters[62,3] = "2021-03-09"
-encounters[64,2] = "Housing Forward"
-encounters[64,3] = "2021-04-30"
-encounters[67,2] = "Unknown"
-encounters[67,3] = "2021-05-23"
-encounters[68,2] = "Stroger Hospital"
-encounters[68,3] = "2021-07-03"
-encounters[70,2] = "Unknown"
-encounters[70,3] = "2021-09-09"
-encounters[73,2] = "Unknown"
-encounters[73,3] = "2021-08-22"
-encounters[79,9] = "Male"
+
 ```
 
 ```{r}
@@ -430,6 +414,25 @@ Pre-processing for encounter/people-level summary stats:
 
 ```{r}
 clustered_encounters <- clustered_encounters_raw %>%
+    rename(cluster_id = `cluster id`) %>%
+    mutate(
+        mrc_id = as.integer(mrc_id)
+    ) %>%
+    # Add missing discharge information gotten from manual chart review
+    rows_update(
+        tibble(
+            mrc_id = c(50L, 63L, 68L, 97L, 112L, 115L, 127L, 136L),
+            mrc_discharge_dest = c("unknown","rush oak park ed","unknown","housing forward","unknown",
+                "stroger hospital","unknown","unknown"),
+            mrc_discharge_date = c("2021-03-07","2021-03-12","2021-03-09","2021-04-30","2021-05-23",
+                "2021-07-03","2021-09-09","2021-08-22")
+        ),
+        by = "mrc_id"
+    ) %>%
+    # Correct mistake in sex entry
+    rows_update(
+        tibble(mrc_id = 160, sex = "male"), by = "mrc_id"
+    ) %>%
     mutate(
         # Coerce date variables into the date object class
         across(
