@@ -5,21 +5,22 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
 
-# Load needed libraries:
+# Dependencies
 
 ```{r message=FALSE, warning=FALSE}
 library(arrow)
 library(lubridate)
 library(tidyverse)
 library(xlsx)
+library(DescTools)
 ```
 
-# Import data from RedCap:
+# Import
 
 ```{r}
 all_raw <- read_csv("data/MRC_ALL_DATA_LABELS_2021-09-30_1556.csv")
 ```
-# MRC-Level Data
+# The MRC
 
 Calculate total months of operations:
 
@@ -36,7 +37,11 @@ print(
 )
 ```
 
-To get total referrals (174), get the max number for client ID:
+# Referrals
+
+## Total Referrals
+
+To get total referrals, get the max number for client ID:
 
 ```{r}
 print(
@@ -47,9 +52,7 @@ print(
     )
 )
 ```
-# Referral-Level Data
-
-Collect referral-level data:
+## Pre-processing Referrals
 
 ```{r}
 referrals <- all_raw %>%
@@ -184,9 +187,9 @@ referrals <- all_raw %>%
     ) 
 ```
 
-# Referral-Level Summary Stats
+## Summarizing Referrals
 
-Create summary table of referral sources:
+### Sources of Referrals
 
 ```{r}
 referral_sources <- referrals %>%
@@ -201,7 +204,7 @@ referral_sources <- referrals %>%
     )
 ```
 
-Create table of referral disposition totals:
+### Referral Dispositions
 
 ```{r}
 dispo_cat_totals <- referrals %>%
@@ -213,7 +216,7 @@ dispo_cat_totals <- referrals %>%
     ) 
 ```
 
-Create table of referral category counts grouped by disposition type:
+### Referral Categories Grouped by Disposition Type
 
 ```{r}
 referral_types_by_dispo <- referrals %>%
@@ -396,9 +399,6 @@ encounters <- all_raw %>%
 
 Some encounters needed manual chart review in order to fill in missing data on discharges:
 
-```{r}
-
-```
 
 ```{r}
 write_parquet(encounters, "data/mrc_people_model/unclustered_MRC_encounters.parquet")
@@ -591,17 +591,56 @@ clustered_encounters <- clustered_encounters_raw %>%
     )
 ```
 
+# Person-Level Data
+
 Consolidate the clustered people records
 
 ```{r}
-people <- clustered_encounters %>%
-    group_by(`cluster id`) %>%
+summarize_to_mode <- function(tibble, grouping_var, target_var){
+    final_tibble <-
+        tibble %>%
+        add_count(.data[[grouping_var]], .data[[target_var]]) %>%
+        group_by(.data[[grouping_var]]) %>%
+        summarise(dummy = .data[[target_var]][n == max(n)][1])
+    final_tibble[[target_var]] = final_tibble$dummy
+    final_tibble <- select(final_tibble, -dummy)
+    return(final_tibble)
+}
+
+mode_vars <- c("mrc_id", "last_name", "first_name", "other_name", "dob", "sex")
+
+people_modes <-
+    mode_vars %>%
+        map(
+            ~ summarize_to_mode(
+                clustered_encounters, 
+                grouping_var = "cluster_id",
+                target_var = .x
+            )
+        ) %>%
+        reduce(full_join)
+```
+
+```{r}
+people <-
+    clustered_encounters %>%
+    group_by(cluster_id) %>%
     summarise(
+        earliest_mrc_admit = min(mrc_admission_date),
         across(
-            .cols = c(sex:hispanic, age_cat:mental_disorder),
-            .fns = ~ first(.x)
+            .cols = c(black, white, asian, pacific, multiracial, other_race, hispanic),
+            .fns = ~ any(.x, na.rm = TRUE)
+        )
+    ) %>%
+    full_join(people_modes) %>%
+    mutate(
+        gazette = paste(
+            str_to_upper(first_name), 
+            str_to_upper(last_name), 
+            as.character(dob)
         )
     )
+    
 ```
 
 
