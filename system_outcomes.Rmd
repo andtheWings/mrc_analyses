@@ -21,12 +21,13 @@ unclustered_encounters <-
     raw_encounters %>%
     distinct() %>%
     mutate(
-        dob = str_replace_all(BIRTH_DT_TM, "/", "-")
+        dob = mdy(BIRTH_DT_TM),
+        gazette = paste(NAME_FIRST, NAME_LAST, dob)
     )
 ```
 
 ```{r}
-write_parquet(unclustered_encounters, "data/mrc_people_model/unclustered_CCH_encounters.parquet")
+write_parquet(unclustered_encounters, "data/mrc_people_gazette/unclustered_CCH_encounters.parquet")
 ```
 
 ```{r}
@@ -76,6 +77,45 @@ CCH_ENCOUNTERS %>%
 
 
 
+```{r}
+mrc_people <- 
+    read_parquet("data/mrc_people.parquet") %>%
+    mutate(gazette = str_to_lower(gazette)) %>%
+    left_join(
+        filter(
+            .data = CCH_ENCOUNTERS,
+            !is.na(gazette)
+        ),
+        by = c("gazette" = "canonical_gazette")
+    ) %>% 
+    mutate(relative_to_mrc = case_when(
+            ADMIT_DATE <= earliest_mrc_admit ~ "Before",
+            ADMIT_DATE > earliest_mrc_admit ~ "After"
+        )
+    ) %>% 
+    group_by(gazette) %>%
+    mutate(
+        earliest_cch_admit = min(ADMIT_DATE),
+        latest_cch_admit = max(ADMIT_DATE)
+    ) %>%
+    ungroup() %>%
+    mutate(
+        time_span_before_mrc = round(
+            earliest_cch_admit %--% earliest_mrc_admit / ddays(1),
+            digits = 2
+        ),
+        time_span_after_mrc = round(
+            earliest_mrc_admit %--% latest_cch_admit/ ddays(1),
+            digits = 2
+        )
+    ) %>%
+    group_by(gazette, relative_to_mrc) %>%
+    summarize(
+        n = n(),
+        adm_rate_before = n/time_span_before_mrc
+    )
+```
+
 
 ```{r quality checks for duplicates}
 possible_clusters <- 
@@ -116,28 +156,11 @@ all_diff <-
 clustered_encounters[1, "cluster_id"]
 ```
 
-
-
-
+Import MRC person-level data:
 
 ```{r}
-unclustered_people <-
-    encounters %>%
-    group_by(cmrns) %>%
-    summarise(
-        num_encounters = n(),
-        avg_length_of_encounter = round(
-            mean(length_of_encounter),
-            digits = 2
-        ),
-        sd_length_of_encounter = round(
-            sd(length_of_encounter),
-            digits = 2
-        ),
-        PERSON_ID = list(PERSON_ID)
-    )
-
-
+mrc_people <- read_parquet("data/mrc_people.parquet")
 ```
+
 
 
