@@ -430,7 +430,11 @@ clustered_encounters <- clustered_encounters_raw %>%
     ) %>%
     # Correct mistake in sex entry
     rows_update(
-        tibble(mrc_id = 160, sex = "male"), by = "mrc_id"
+        tibble(mrc_id = c(160, 31), sex = "male"), by = "mrc_id"
+    ) %>%
+    # Correct mistake in insurance category
+    rows_update(
+        tibble(mrc_id = 74, insurance_cat = ""), by = "mrc_id"
     ) %>%
     mutate(
         # Coerce date variables into the date object class
