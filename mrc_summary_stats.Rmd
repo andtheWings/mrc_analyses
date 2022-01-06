@@ -13,6 +13,7 @@ library(lubridate)
 library(tidyverse)
 library(xlsx)
 library(DescTools)
+library(report)
 ```
 
 # Import
@@ -65,125 +66,120 @@ referrals <- all_raw %>%
     # Only keep records that have data present about one of the referral variables
     filter(
         !is.na(referral_source) | !is.na(primary_ref_type) | !is.na(disposition)
-    ) %>%
-    # Coerce variables into un-ordered factors 
+    )  %>%
     mutate(
         referral_source = str_to_lower(referral_source),
         # Consolidate referrals source categories using string matching
-        referral_source_cat = as_factor(
-            case_when(
-                str_detect(
-                    string = referral_source,
-                    pattern = "macneal"
-                ) ~ "MacNeal Hospital, Loyola Medicine",
-                str_detect(
-                    string = referral_source,
-                    pattern = "loyola"
-                ) ~ "Loyola UMC",
-                str_detect(
-                    string = referral_source,
-                    pattern = "stroger"
-                ) ~ "John H. Stroger Hospital, Cook County Health",
-                str_detect(
-                    string = referral_source,
-                    pattern = "osf"
-                ) ~ "OSF Little Company of Mary Medical Center",
-                str_detect(
-                    string = referral_source,
-                    pattern = "olympia"
-                ) ~ "Franciscan Health Olympia Fields",
-                str_detect(
-                    string = referral_source,
-                    pattern = "alsip"
-                ) ~ "CCDPH Alsip Alternate Housing Program",
-                str_detect(
-                    string = referral_source,
-                    pattern = "ridge"
-                ) ~ "Advocate Lutheran General Hospital",
-                str_detect(
-                    string = referral_source,
-                    pattern = "swedish"
-                ) ~ "Swedish Hospital, NorthShore",
-                str_detect(
-                    string = referral_source,
-                    pattern = "gottlieb"
-                ) ~ "Gottlieb Memorial Hospital, Loyola Medicine",
-                str_detect(
-                    string = referral_source,
-                    pattern = "palos"
-                ) ~ "Palos Health, Northwestern Medicine",
-                str_detect(
-                    string = referral_source,
-                    pattern = "oak"
-                ) ~ "Rush Oak Park Hospital",
-                str_detect(
-                    string = referral_source,
-                    pattern = "connections"
-                ) ~ "Connections for the Homeless",
-                str_detect(
-                    string = referral_source,
-                    pattern = "provident"
-                ) ~ "Provident Hospital of Cook County",
-                str_detect(
-                    string = referral_source,
-                    pattern = "amita"
-                ) ~ "AMITA Health Saint Francis Hospital Evanston",
-                str_detect(
-                    string = referral_source,
-                    pattern = "rush u"
-                ) ~ "Rush University Medical Center",
-                str_detect(
-                    string = referral_source,
-                    pattern = "respond"
-                ) ~ "Respond Now",
-                str_detect(
-                    string = referral_source,
-                    pattern = "gateway"
-                ) ~ "Gateway Foundation",
-                str_detect(
-                    string = referral_source,
-                    pattern = "northwestern memorial"
-                ) ~ "Northwestern Memorial Hospital",
-                str_detect(
-                    string = referral_source,
-                    pattern = "safe"
-                ) ~ "A Safe Haven",
-                str_detect(
-                    string = referral_source,
-                    pattern = "defend"
-                ) ~ "Law Office of the Cook COunty Public Defender",
-                str_detect(
-                    string = referral_source,
-                    pattern = "access"
-                ) ~ "Access Community Health Network",
-                str_detect(
-                    string = referral_source,
-                    pattern = "sojou"
-                ) ~ "Sojourner House",
-                str_detect(
-                    string = referral_source,
-                    pattern = "northwest comm"
-                ) ~ "Northwest Community Hospital, NorthShore",
-                str_detect(
-                    string = referral_source,
-                    pattern = "revive"
-                ) ~ "ReVive Center for Housing and Healing, Episcopal Charities",
-                str_detect(
-                    string = referral_source,
-                    pattern = "west sub"
-                ) ~ "West Suburban Medical Center, Pipeline Health",
-                str_detect(
-                    string = referral_source,
-                    pattern = "cermak"
-                ) ~ "Cermak Health Services of Cook County",
-                str_detect(
-                    string = referral_source,
-                    pattern = "complex|ccdph"
-                ) ~ "Cook County Department of Public Health",
-            )
-        ),
-        primary_ref_type = as_factor(primary_ref_type),
-        disposition = as_factor(disposition)
+        referral_source_cat = case_when(
+            str_detect(
+                string = referral_source,
+                pattern = "macneal"
+            ) ~ "MacNeal Hospital, Loyola Medicine",
+            str_detect(
+                string = referral_source,
+                pattern = "loyola"
+            ) ~ "Loyola UMC",
+            str_detect(
+                string = referral_source,
+                pattern = "stroger"
+            ) ~ "John H. Stroger Hospital, Cook County Health",
+            str_detect(
+                string = referral_source,
+                pattern = "osf"
+            ) ~ "OSF Little Company of Mary Medical Center",
+            str_detect(
+                string = referral_source,
+                pattern = "olympia"
+            ) ~ "Franciscan Health Olympia Fields",
+            str_detect(
+                string = referral_source,
+                pattern = "alsip"
+            ) ~ "CCDPH Alsip Alternate Housing Program",
+            str_detect(
+                string = referral_source,
+                pattern = "ridge"
+            ) ~ "Advocate Lutheran General Hospital",
+            str_detect(
+                string = referral_source,
+                pattern = "swedish"
+            ) ~ "Swedish Hospital, NorthShore",
+            str_detect(
+                string = referral_source,
+                pattern = "gottlieb"
+            ) ~ "Gottlieb Memorial Hospital, Loyola Medicine",
+            str_detect(
+                string = referral_source,
+                pattern = "palos"
+            ) ~ "Palos Health, Northwestern Medicine",
+            str_detect(
+                string = referral_source,
+                pattern = "oak"
+            ) ~ "Rush Oak Park Hospital",
+            str_detect(
+                string = referral_source,
+                pattern = "connections"
+            ) ~ "Connections for the Homeless",
+            str_detect(
+                string = referral_source,
+                pattern = "provident"
+            ) ~ "Provident Hospital of Cook County",
+            str_detect(
+                string = referral_source,
+                pattern = "amita"
+            ) ~ "AMITA Health Saint Francis Hospital Evanston",
+            str_detect(
+                string = referral_source,
+                pattern = "rush u"
+            ) ~ "Rush University Medical Center",
+            str_detect(
+                string = referral_source,
+                pattern = "respond"
+            ) ~ "Respond Now",
+            str_detect(
+                string = referral_source,
+                pattern = "gateway"
+            ) ~ "Gateway Foundation",
+            str_detect(
+                string = referral_source,
+                pattern = "northwestern memorial"
+            ) ~ "Northwestern Memorial Hospital",
+            str_detect(
+                string = referral_source,
+                pattern = "safe"
+            ) ~ "A Safe Haven",
+            str_detect(
+                string = referral_source,
+                pattern = "defend"
+            ) ~ "Law Office of the Cook COunty Public Defender",
+            str_detect(
+                string = referral_source,
+                pattern = "access"
+            ) ~ "Access Community Health Network",
+            str_detect(
+                string = referral_source,
+                pattern = "sojou"
+            ) ~ "Sojourner House",
+            str_detect(
+                string = referral_source,
+                pattern = "northwest comm"
+            ) ~ "Northwest Community Hospital, NorthShore",
+            str_detect(
+                string = referral_source,
+                pattern = "revive"
+            ) ~ "ReVive Center for Housing and Healing, Episcopal Charities",
+            str_detect(
+                string = referral_source,
+                pattern = "west sub"
+            ) ~ "West Suburban Medical Center, Pipeline Health",
+            str_detect(
+                string = referral_source,
+                pattern = "cermak"
+            ) ~ "Cermak Health Services of Cook County",
+            str_detect(
+                string = referral_source,
+                pattern = "complex|ccdph"
+            ) ~ "Cook County Department of Public Health"
+        )
     ) 
 ```
 
@@ -203,6 +199,7 @@ referral_sources <- referrals %>%
         variable = "referral_source"
     )
 ```
+
 
 ### Referral Dispositions
 
