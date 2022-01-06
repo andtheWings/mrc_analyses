@@ -678,13 +678,13 @@ count_and_percent <- function(tbl, var_name) {
 Identify encounter-level variables for which you want summary tables:
 
 ```{r}
-encounter_summary_names <- c("referral_cat", "insurance_cat", "discharge_dest_cat", "age_cat")
+encounter_summary_names <- c("referral_cat", "insurance_cat", "discharge_dest_cat", "age_cat", "mental_disorder", "substance_disorder")
 ```
 
 Identify people-level variables for which you want summary tables:
 
 ```{r}
-people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic", "mental_disorder", "substance_disorder")
+people_summary_names <- c("sex", "black", "white", "asian", "pacific", "multiracial", "other_race", "hispanic")
 ```
 
 Automate the generation of a summary table for every single encounter or person-level variable of interest:
