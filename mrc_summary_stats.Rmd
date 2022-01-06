@@ -447,9 +447,10 @@ clustered_encounters <- clustered_encounters_raw %>%
             .cols = c(first_name, last_name, other_name),
             .fns = ~ str_to_title(.x)
         ),
-        # Coerce these variables into booleans
+        # Coerce the following variables into booleans
         across(
-            .cols = black:alcohol_disorder,
+            .cols = c(black, white, asian, pacific, multiracial, other_race, hispanic, hallucinations,
+                      hospitalized, heroin_fentanyl, pain_pills, methadone, bupe, OUD_program, alcohol_disorder),
             .fns = ~ case_when(
                 .x %in% c("checked", "yes") ~ TRUE,
                 .x %in% c("unchecked", "no") ~ FALSE
