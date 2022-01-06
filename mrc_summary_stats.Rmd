@@ -411,7 +411,9 @@ Pre-processing for encounter/people-level summary stats:
 
 ```{r}
 clustered_encounters <- clustered_encounters_raw %>%
+    # Take space out of cluster ID variable name
     rename(cluster_id = `cluster id`) %>%
+    # Convert ID's into integers without the trailing zeros that make joins more complicated
     mutate(
         mrc_id = as.integer(mrc_id)
     ) %>%
